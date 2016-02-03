@@ -1,0 +1,462 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Implémentation de la théorie des types Dépendants
+\end_layout
+
+\begin_layout Author
+Delgado roman 
+\end_layout
+
+\begin_layout Abstract
+Ce document représente la synthèse de mes premières lectures ainsi que de
+ ma compréhension du sujet.
+ Ce projet consistant en l'implémentation d'un système de type.
+ Il sera donc question de définir les principaux concepts que j'ai pu aborder
+ lors de mes lectures.
+ La deuxième partie se concentre sur une implémentation du lambda calcul
+ qui fait office de travail préliminaire au projet.
+ Tout au long du projet il a été choisi de programmer en Ocaml language
+ de programmation fonctionnelle.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Théorie 
+\end_layout
+
+\begin_layout Subsection
+Lambda Calcul non typé
+\end_layout
+
+\begin_layout Subsubsection
+Un modèle de calcul universel
+\end_layout
+
+\begin_layout Standard
+Dans les années 1930, Alonzo church commença son travail sur le lambda calcul.
+ Le lambda calcul est un modèle de calcul universel au même titre que les
+ machines de Turing.
+ A l'aide d'une syntaxe simple il permet d'étudier les propriétés du calcul
+ de façon formelle.
+ Les fonctions ne portent pas de nom et ne sont applicables que à un seul
+ argument.
+ En 1936 Church publie dans son article "An unsolvable problem of elementary
+ number theory" présentant le lambda calcul non typé.
+ Celui ci est très souple car tout est fonction, cela permet donc de se
+ concentrer sur la partie calculatoire.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Syntaxe 
+\end_layout
+
+\begin_layout Standard
+On peut définir le lambda calcul non typé de la façon suivante:
+\end_layout
+
+\begin_layout LyX-Code
+t::=                    lambda terme
+\end_layout
+
+\begin_layout LyX-Code
+      x                 variable
+\end_layout
+
+\begin_layout LyX-Code
+      
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.t              abstraction
+\end_layout
+
+\begin_layout LyX-Code
+      t t               application
+\end_layout
+
+\begin_layout Standard
+Pour faire une analogie avec les languages de programmation, on peut dire
+ qu'une abstraction est une définition de fonction et que l'application
+ consiste à appliquer une fonction un argument (qui dans le lambda calcul
+ est aussi une fonction).
+ On peut donc définir un lambda terme représentant la fonction identité
+ de la façon suivante 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.x .
+ Il existe de nombreuses façons de représenter les lambda termes, ici il
+ est question de celle utilisée par Pierce dans son ouvrage 
+\begin_inset Quotes eld
+\end_inset
+
+Types and programming languages
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Reduction
+\end_layout
+
+\begin_layout Standard
+Avant de parler de la réduction, il faut pouvoir déterminer si une variable
+ est liée ou libre.
+ Une variable est liée lorsque celle ci apparait à l'intérieur d'une abstraction.
+ Dans le lambda terme suivant 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.x y la variable x est liée et la variable y est libre.
+ Voici un dernier exemple pour retirer toute ambiguïté, (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+y.
+ x y)y ici la variable x est liée ainsi que la première occurence de la
+ variable y, cependant la variable y à l'exterieur des parenthèse est libre.
+ Un terme dont l'ensemble de ses variables sont liées est dit clos.
+ 
+\end_layout
+
+\begin_layout Standard
+Le fait de réduire un lambda terme peut être vu en suivant la même analogie
+ que précédement comme le fait de calculer celui ci.
+ On ne peut effectuer de réduction que sur les applications dont le membre
+ de gauche est une abstraction et cela consiste à substituer dans le membre
+ de gauche l'ensemble des variables liées par le terme de droite.
+ 
+\end_layout
+
+\begin_layout Standard
+On peut donc formaliser une réduction ainsi (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.t)y -> t[x->y] .
+ On peut donc utiliser notre fonction identité définie précedement à un
+ terme t de la façon suivante (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.x)t -> t .
+ Un lambda terme sous la forme normale est un terme ou plus aucune reduction
+ n'est possible, certains termes peuvent ne pas avoir de forme normale comme
+ le terme (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.xx)(
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.xx)
+\end_layout
+
+\begin_layout Subsubsection
+Les entiers de Church
+\end_layout
+
+\begin_layout Standard
+Ici il faut faire une transition avec le fait que le lambda calcul non typé
+ correspond au typage dynamique, alors que le lambda calcul est la version
+ typage statique 
+\end_layout
+
+\begin_layout Standard
+Le lambda calcul permet de définir beaucoup plus de chose que sa simplicité
+ pourrait laisser croire.
+ Ici nous allons montrer un exemple de programmation a l'aide du lambda
+ calcul, les entiers de Church.
+ 
+\end_layout
+
+\begin_layout Standard
+En voici une définition formelle:
+\end_layout
+
+\begin_layout LyX-Code
+c0 = 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+s.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+z.z
+\end_layout
+
+\begin_layout LyX-Code
+c1 = 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+s.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+z.s z
+\end_layout
+
+\begin_layout LyX-Code
+c2 = 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+s.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+z.s(s z)
+\end_layout
+
+\begin_layout Standard
+Ici c0 correspond à l'entier 0, c1 à l'entier 1 et ainsi de suite.
+ Cette définition est très proche de la définition des entiers de Peano
+ ou l'entier 2 se notterait successeur(successeur(0)).
+ Maintenant voici la défintion de la fonction successeur ainsi que la fonction
+ d'addition dans le lambda calcul:
+\end_layout
+
+\begin_layout LyX-Code
+successeur = 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+n.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+s.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+z.
+ n s (s z)
+\end_layout
+
+\begin_layout LyX-Code
+plus = 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+m.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+n.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+s.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+z.
+ m s (n s z)
+\end_layout
+
+\begin_layout Standard
+Ces défintions sont extraites du livre 
+\begin_inset Quotes eld
+\end_inset
+
+types and programming languages
+\begin_inset Quotes erd
+\end_inset
+
+ de Pierce
+\end_layout
+
+\begin_layout Subsection
+Lambda Calcul simplement typé
+\end_layout
+
+\begin_layout Standard
+Les citations dans cette section sont Church Curry Pierce
+\end_layout
+
+\begin_layout Standard
+Par la suite en 1940 il publie 
+\begin_inset Quotes eld
+\end_inset
+
+A Formulation of the Simple Theory of Types
+\begin_inset Quotes erd
+\end_inset
+
+ ou apparait le lambda calcul typé.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+règles de types
+\end_layout
+
+\begin_layout Standard
+Le lambda calcul non typé permet de formaliser une infinité de ....
+ mais l'absence de type ne lui permet pas de vérifier la validité de ses
+ calculs.
+ Pour tout programmeur il parrait logique que l'expression 
+\begin_inset Quotes eld
+\end_inset
+
+if <entier> then <booléens> else <booléens> n'a pas de sens car il faudrait
+ que le résultat de l'expression de la condition soit un booléen et non
+ un entier.
+ C'est pour cette raison que les types sont intérressants car ils permettent
+ de palier à ces erreurs d'éxecution.
+ Nous allons donc nous intérresser à l'implémentation des booléens dans
+ le lambda calcul.
+ Avant toute chose il faut définir la notion de type.
+\end_layout
+
+\begin_layout LyX-Code
+T ::=             Type
+\end_layout
+
+\begin_layout LyX-Code
+        Bool      Type booléens
+\end_layout
+
+\begin_layout LyX-Code
+        T->T      Type de fonction
+\end_layout
+
+\begin_layout Standard
+/* Ici je vais mettre les règles de dérivation qui sont dans le livre de
+ Pierce */
+\end_layout
+
+\begin_layout Subsubsection
+La securité engendrée par les systèmes de type
+\end_layout
+
+\begin_layout Standard
+Une des notions évoquée par Pierce dans son ouvrage est la sécurité offerte
+ par les systèmes de types quant à la bonne éxecution du programme.
+ En effet lors de la compilation dans un système de type statique les erreurs
+ sont interceptées.
+ Il faut maintenant définir deux notions escentielles, 
+\end_layout
+
+\begin_layout Subsection
+Les types dépendants
+\end_layout
+
+\begin_layout Standard
+Dire que c'est plus dynamique que les statiques mais que cela s'effectue
+ quand même lors de la compilation 
+\end_layout
+
+\begin_layout Subsubsection
+Définition 
+\end_layout
+
+\begin_layout Standard
+Les types dépendants permettent de determiner le type d'un terme a l'aide
+ de la valeur d'un autre terme auquel il est associé,
+\end_layout
+
+\begin_layout Subsubsection
+Règles de typage
+\end_layout
+
+\begin_layout Standard
+Ici mettre des règles de typage que je ne connais pas encore
+\end_layout
+
+\begin_layout Subsubsection
+Exemple 
+\end_layout
+
+\begin_layout Standard
+Avec le vecteur faire un exemple
+\end_layout
+
+\begin_layout Section
+Implementation
+\end_layout
+
+\begin_layout Subsection
+Lieurs
+\end_layout
+
+\end_body
+\end_document
