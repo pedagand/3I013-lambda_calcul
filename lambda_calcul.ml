@@ -42,7 +42,7 @@ match t with
 | Appl(Abs(x),y) -> evaluation(reduction t)
 | Appl(BoundVar x,y) -> Appl(BoundVar x,y)
 | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
-| Appl(x,y) -> evaluation(Appl(evaluation x, evaluation y))
+| Appl(x,y) -> evaluation(Appl(evaluation x, y))
 
 
 
@@ -51,9 +51,6 @@ let y = Appl(Abs(Appl(BoundVar 0, FreeVar "y")),FreeVar "a")
 let w = Appl(Appl(Abs(Abs(BoundVar 0)),FreeVar "x"),Abs(FreeVar "u"))
 let z = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),FreeVar "u")
 let test = Appl(Appl(Abs(BoundVar 0),FreeVar "u"),Abs(BoundVar 0))
-
-
-
 
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (x))

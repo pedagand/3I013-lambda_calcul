@@ -131,7 +131,7 @@ t::=                    lambda terme
 
 \begin_layout LyX-Code
       
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.t              abstraction
@@ -148,7 +148,7 @@ Pour faire une analogie avec les languages de programmation, on peut dire
  est aussi une fonction).
  On peut donc définir un lambda terme représentant la fonction identité
  de la façon suivante 
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.x .
@@ -173,16 +173,16 @@ Avant de parler de la réduction, il faut pouvoir déterminer si une variable
  est liée ou libre.
  Une variable est liée lorsque celle ci apparait à l'intérieur d'une abstraction.
  Dans le lambda terme suivant 
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.x y la variable x est liée et la variable y est libre.
  Voici un dernier exemple pour retirer toute ambiguïté, (
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 y.
@@ -204,24 +204,24 @@ Le fait de réduire un lambda terme peut être vu en suivant la même analogie
 
 \begin_layout Standard
 On peut donc formaliser une réduction ainsi (
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.t)y -> t[x->y] .
  On peut donc utiliser notre fonction identité définie précedement à un
  terme t de la façon suivante (
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.x)t -> t .
  Un lambda terme sous la forme normale est un terme ou plus aucune réduction
  n'est possible, certains termes peuvent ne pas avoir de forme normale comme
  le terme (
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.xx)(
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x.xx)
@@ -392,7 +392,7 @@ if <entier> then <booléens> else <booléens> n'a pas de sens car il faudrait
  de palier à ces erreurs d'éxecution.
  Nous allons donc nous intéresser à l'implémentation des booléens dans le
  lambda calcul.
- Avant toute chose il faut définir la notion de type.
+ Avant toute chose il faut définir la notion de type et de contexte:
 \end_layout
 
 \begin_layout LyX-Code
@@ -400,42 +400,121 @@ T ::=             Type
 \end_layout
 
 \begin_layout LyX-Code
-        Bool      Type booléens
+    bool          booléens
 \end_layout
 
 \begin_layout LyX-Code
-        T->T      Type de fonction
+    T->T          Type de fonction
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\Gamma$
+\end_inset
+
+::=
+\end_layout
+
+\begin_layout LyX-Code
+     
+\begin_inset Formula $\emptyset$
+\end_inset
+
+            Contexte vide
+\end_layout
+
+\begin_layout LyX-Code
+     
+\begin_inset Formula $\Gamma$
+\end_inset
+
+,x:T        Contrainte de type sur la variable
 \end_layout
 
 \begin_layout Standard
 Nous allons maintenant utiliser une notation explicitant le typage des variables
 , 
-\begin_inset Formula $\Lambda$
+\begin_inset Formula $\lambda$
 \end_inset
 
 x:T.t signifie quand dans le terme t la variable liée x possède le type T.
  Nous allons maintenant définir les règles de typage pour les lambda termes.
- Pour déduire le type d'une variable à partir de son type est trivial: 
-\begin_inset Formula $\frac{x:T}{x:T}$
-\end_inset
-
- (cette expression se lit en partant du numérateur, supposons une variable
- x de type T, alors le type de la variable x est T).
- Les abstractions quant à elles nécessitent deux supositions: 
-\begin_inset Formula $\frac{x:T1\: t:T2}{\Lambda x:T1.t\,:T1\rightarrow T2}$
-\end_inset
-
- .
- En effet si l'on possède le type de la variable x ainsi que celui du terme
- t on peut donc conclure sur le type de l'abstraction qui sera une bijection
- entre T1 et T2.
- En suivant la même logique pour déterminer le type d'une application il
- nous faut le type de l'abstraction de gauche et le type du terme de droite:
+ Pour déduire le type d'une variable à partir de son type est assez trivial:
  
-\begin_inset Formula $\frac{t1:T1\rightarrow T2\; t2:T1}{t1\, t2\,:T2}$
+\end_layout
+
+\begin_layout LyX-Code
+                       
+\begin_inset Formula $\cfrac{x:T\,\in\Gamma}{\Gamma\vdash x:T}$
 \end_inset
 
- .
+      
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout Verse
+(cette expression se lit en partant du numérateur, supposons une variable
+ x de type T dans le contexte 
+\begin_inset Formula $\Gamma$
+\end_inset
+
+, alors on peut déduire d'après le contexte 
+\begin_inset Formula $\Gamma$
+\end_inset
+
+ que le type de la variable x est T).
+ 
+\end_layout
+
+\begin_layout Standard
+Il faut maintenant définir les règles de typage pour l'abstraction (R-Type
+ Abs) et l'application (R-Type Appl).
+ Pour les construire il est plus simple de commencer par poser la conclusion
+ puis de chercher les hypothèses nécéssaires dans le contexte.
+ Par exemple pour l'abstraction le type à obtenir sera de la forme A
+\begin_inset Formula $\Rightarrow$
+\end_inset
+
+B il faut donc que la variable associée au lambda terme soit de type A et
+ le résultat de type B
+\end_layout
+
+\begin_layout LyX-Code
+               
+\begin_inset Formula $\cfrac{\Gamma,x:A\,\vdash t:B}{\Gamma\vdash\lambda x:A.t\,:\, A\rightarrow B}$
+\end_inset
+
+    R-Type Abs
+\end_layout
+
+\begin_layout LyX-Code
+                 
+\begin_inset Formula $\,\,$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+                 
+\begin_inset Formula $\,\,$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+               
+\begin_inset Formula $\cfrac{\Gamma\vdash t1:A\rightarrow B\,\,\,\,\,\Gamma\vdash t2:A}{\Gamma\vdash t1\, t2:B}$
+\end_inset
+
+ R-Type Appl
 \end_layout
 
 \begin_layout Subsubsection
@@ -472,34 +551,200 @@ Ces deux règles permettent d'affirmer que la dérivation d'un terme correctemen
 Les types dépendants
 \end_layout
 
-\begin_layout Standard
-Dire que c'est plus dynamique que les statiques mais que cela s'effectue
- quand même lors de la compilation 
-\end_layout
-
 \begin_layout Subsubsection
 Définition 
 \end_layout
 
 \begin_layout Standard
-Les types dépendants permettent de déterminer le type d'un terme à l'aide
- de la valeur d'un autre terme auquel il est associé,
-\end_layout
+Afin d'introduire les types dépendants prenons l'exemple suivant: soit la
+ fonction ayant pour but d'effectuer un 
+\begin_inset Quotes eld
+\end_inset
 
-\begin_layout Standard
-Les types dépendants permettent de caractériser les termes en fonction de
- leur valeur.
- Si l'on pose l'expression a =>b dans un typage statique pour déterminer
- le type de b on se base sur le type de a tandis que dans un système de
- type dépendant, le type de b sera determiné à l'aide de la valeur de a.
- Cela offre une souplesse supplémentaire dans l'évaluation des types en
- acceptant plus de programmes que si l'on utilisait un typage statique.
- Cependant la sécurité offerte par le système de type n'est pas altérée
- c'est pour cette raison que les types dépendants sont une bonne alternative.
+et logique
+\begin_inset Quotes erd
+\end_inset
+
+ entre deux vecteurs de même taille.
+ Dans un système de type statique on ne peut pas faire de restriction quant
+ à la taille que feront les deux vecteurs.
+ Grâce à la théorie des types dépendants il est possible de demander expliciteme
+nt deux vecteurs de taille n et donc d'effectuer le 
+\begin_inset Quotes eld
+\end_inset
+
+et logique
+\begin_inset Quotes erd
+\end_inset
+
+ sans problème.
+ Les types dépendants permettent donc de caractériser un objet non pas seulement
+ par son type mais aussi par sa valeur et ainsi de créer des règles de typage
+ plus complexes et offrant plus de souplesse que le typage dynamique.
 \end_layout
 
 \begin_layout Subsubsection
 Règles de typage
+\end_layout
+
+\begin_layout Standard
+Dans cette partie il sera question de présenter un système de type dépendant
+ comprenant quelques types de base simple ainsi que leurs règles d'introduction
+ et d'élimination.
+ 
+\end_layout
+
+\begin_layout Standard
+Commençons tout d'abord par définir les types de base que nous allons manipuler
+ qui sont: le type booléen (bool), l'ensemble vide (void), l'ensemble unitaire
+ (unit) ainsi que l'implication (
+\begin_inset Formula $\Rightarrow$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\cfrac{}{\Gamma\vdash bool\,\in Type}$
+\end_inset
+
+                  
+\begin_inset Formula $\cfrac{}{\Gamma\vdash unit\:\in Type}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\,$
+\end_inset
+
+                                  
+\begin_inset Formula $\,\,$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\hspace{1em}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\cfrac{}{\Gamma\vdash void\:\in Type}$
+\end_inset
+
+                 
+\begin_inset Formula $\cfrac{\Gamma\vdash A\in Type\,\, B\in Type}{\Gamma\vdash(x:A)\Rightarrow B\:\in Type}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Prenons pour exemple le type booléen, la règle d'introduction est assez
+ simple puisque peu importe le contexte 
+\begin_inset Quotes eld
+\end_inset
+
+true
+\begin_inset Quotes erd
+\end_inset
+
+ et 
+\begin_inset Quotes eld
+\end_inset
+
+false
+\begin_inset Quotes erd
+\end_inset
+
+ sont des booléens.
+ La règle d'élimination des booléens va être le 
+\begin_inset Quotes eld
+\end_inset
+
+if ...
+ then ...
+ else
+\begin_inset Quotes erd
+\end_inset
+
+ puisque cette règle permet d'utiliser nos booléens précédement définis.
+ De même pour les autres types voici l'ensemble des règles de typage que
+ nous définiron:
+\end_layout
+
+\begin_layout LyX-Code
+         Introduction               Elimination
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\:$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\cfrac{}{\Gamma\vdash true\in bool\qquad false\in bool}$
+\end_inset
+
+     
+\begin_inset Formula $\cfrac{\Gamma\vdash t\in bool\;\Gamma\vdash u,v\in A}{\Gamma\vdash if\: t\: then\, u\, else\, v}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\,$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\cfrac{}{\Gamma\vdash i()\in unit}$
+\end_inset
+
+                     
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\,$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+                                
+\begin_inset Formula $\cfrac{\Gamma\vdash t\in void}{\Gamma\vdash A\in A}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\,$
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Formula $\cfrac{\Gamma,x:A\vdash b\in B}{\Gamma\vdash\lambda x:B\in(x:A)\Rightarrow B}$
+\end_inset
+
+              
+\begin_inset Formula $\cfrac{f(a:A)\Rightarrow B\quad s\in A}{f(s)\in B[s/a]}$
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -507,11 +752,12 @@ Exemple
 \end_layout
 
 \begin_layout Standard
-Avec le vecteur faire un exemple
+Essayons de formaliser l'exemple exprimé lors de la définition de la théorie
+ des types dépendants avec l'aide du langage Agda.
 \end_layout
 
 \begin_layout Section
-Implementation
+Implémentation
 \end_layout
 
 \begin_layout Standard
@@ -600,7 +846,15 @@ A tutorial implementation of dependently typed lambda calculus
 
  il est question de la représentation des variables avec les indices de
  de Bruijn mais cette fois ci on laisse les variables libres sous la forme
- de caractère.
+ de caractère, cette notion est aussi évoquée dans la publication 
+\begin_inset Quotes eld
+\end_inset
+
+I'am not a number i'am a free Variable
+\begin_inset Quotes erd
+\end_inset
+
+.
  Le terme précédent s'écrirait donc (
 \begin_inset Formula $\Lambda$
 \end_inset
@@ -759,15 +1013,8 @@ Ici les applications n'étant pas considérées comme réductibles on renvoie
  termes ne peuvent pas se réduire nous avons décidé d'appeler cette fonction
  évaluation.
  Il existe de nombreuses stratégies pour calculer les lambda termes, nous
- avons choisis la stratégie 
-\begin_inset Quotes eld
-\end_inset
-
-call by name
-\begin_inset Quotes erd
-\end_inset
-
- (c'est ainsi qu'elle est énoncée dans 
+ avons choisis la stratégie de reduction call by name (c'est ainsi qu'elle
+ est énoncée dans 
 \begin_inset Quotes eld
 \end_inset
 
@@ -776,12 +1023,52 @@ Types and programming languages
 \end_inset
 
 ).
- Cette stratégie consite à considérer l'ensemble du lambda terme, si celui
- ci ....
+ Cette stratégie consite à réduire le membre gauche des redex au maximum
+ mais à ne jamais modifier le membre de gauche.
+ Voici donc une implémentation de cette stratégie:
+\end_layout
+
+\begin_layout LyX-Code
+let rec evaluation t =  
+\end_layout
+
+\begin_layout LyX-Code
+   match t with  
+\end_layout
+
+\begin_layout LyX-Code
+   | FreeVar v -> FreeVar v  
+\end_layout
+
+\begin_layout LyX-Code
+   | BoundVar v -> BoundVar v  
+\end_layout
+
+\begin_layout LyX-Code
+   | Abs x -> Abs(x) 
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl(Abs(x),y) -> evaluation(reduction t) 
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl(BoundVar x,y) -> Appl(BoundVar x,y)  
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl(FreeVar x,y) -> Appl(FreeVar x,y)  
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl(x,y) -> evaluation(Appl(evaluation x, y))
 \end_layout
 
 \begin_layout Standard
-call by name qui n'autorise pas l'évaluation a l'intérieur des abstractions.
+Avec l'ensemble de ces fonctions nous avons donc implémenté le lambda calcul
+ non typé.
+ La suite du projet consistera donc comme le sujet l'indique en une implémentati
+on d'un système de type dépendant en Ocaml.
 \end_layout
 
 \end_body
