@@ -40,7 +40,7 @@ match t with
 | BoundVar v -> BoundVar v 
 | Abs x -> Abs(x)
 | Appl(Abs(x),y) -> evaluation(reduction t)
-| Appl(x,y) -> Appl(evaluation x, evaluation y)
+| Appl(x,y) -> evaluation(Appl(evaluation x, evaluation y))
 
 
 let x = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),Abs(BoundVar 0))

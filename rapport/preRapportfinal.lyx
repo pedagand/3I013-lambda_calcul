@@ -75,8 +75,6 @@ Ce document représente la synthèse de mes premières lectures ainsi que de
  lors de mes lectures.
  La deuxième partie se concentre sur une implémentation du lambda calcul
  qui fait office de travail préliminaire au projet.
- Tout au long du projet il a été choisi de programmer en Ocaml language
- de programmation fonctionnelle.
 \end_layout
 
 \begin_layout Standard
@@ -167,7 +165,7 @@ Types and programming languages
 \end_layout
 
 \begin_layout Subsubsection
-Reduction
+Réduction
 \end_layout
 
 \begin_layout Standard
@@ -198,8 +196,9 @@ y.
 Le fait de réduire un lambda terme peut être vu en suivant la même analogie
  que précédement comme le fait de calculer celui ci.
  On ne peut effectuer de réduction que sur les applications dont le membre
- de gauche est une abstraction et cela consiste à substituer dans le membre
- de gauche l'ensemble des variables liées par le terme de droite.
+ de gauche est une abstraction, on appelle cela une redex.
+ Le faite de réduire consiste à substituer dans le membre de gauche l'ensemble
+ des variables liées par le terme de droite.
  
 \end_layout
 
@@ -215,7 +214,7 @@ x.t)y -> t[x->y] .
 \end_inset
 
 x.x)t -> t .
- Un lambda terme sous la forme normale est un terme ou plus aucune reduction
+ Un lambda terme sous la forme normale est un terme ou plus aucune réduction
  n'est possible, certains termes peuvent ne pas avoir de forme normale comme
  le terme (
 \begin_inset Formula $\Lambda$
@@ -239,10 +238,13 @@ Ici il faut faire une transition avec le fait que le lambda calcul non typé
 \end_layout
 
 \begin_layout Standard
-Le lambda calcul permet de définir beaucoup plus de chose que sa simplicité
+Le lambda calcul permet de définir beaucoup plus de choses que sa simplicité
  pourrait laisser croire.
  Ici nous allons montrer un exemple de programmation a l'aide du lambda
  calcul, les entiers de Church.
+ Comme dans le lambda calcul il n'est possible que d'appliquer une fonction
+ a un argument il va nous falloir appliquer une fonction n fois pour obtenir
+ le l'entier n.
  
 \end_layout
 
@@ -289,8 +291,8 @@ z.s(s z)
 \begin_layout Standard
 Ici c0 correspond à l'entier 0, c1 à l'entier 1 et ainsi de suite.
  Cette définition est très proche de la définition des entiers de Peano
- ou l'entier 2 se notterait successeur(successeur(0)).
- Maintenant voici la défintion de la fonction successeur ainsi que la fonction
+ ou l'entier 2 se noterait successeur(successeur(0)).
+ Maintenant voici la définition de la fonction successeur ainsi que la fonction
  d'addition dans le lambda calcul:
 \end_layout
 
@@ -333,6 +335,10 @@ z.
 \end_layout
 
 \begin_layout Standard
+Pour la fonction plus, 
+\end_layout
+
+\begin_layout Standard
 Ces défintions sont extraites du livre 
 \begin_inset Quotes eld
 \end_inset
@@ -341,7 +347,12 @@ types and programming languages
 \begin_inset Quotes erd
 \end_inset
 
- de Pierce
+ de Pierce.
+\end_layout
+
+\begin_layout Standard
+Pour conclure sur le lambda calcul non typé, on peut apparenter cela à un
+ système de type dynamique.
 \end_layout
 
 \begin_layout Subsection
@@ -349,11 +360,7 @@ Lambda Calcul simplement typé
 \end_layout
 
 \begin_layout Standard
-Les citations dans cette section sont Church Curry Pierce
-\end_layout
-
-\begin_layout Standard
-Par la suite en 1940 il publie 
+En 1940 Alonzo Church publie un article 
 \begin_inset Quotes eld
 \end_inset
 
@@ -361,8 +368,9 @@ A Formulation of the Simple Theory of Types
 \begin_inset Quotes erd
 \end_inset
 
- ou apparait le lambda calcul typé.
- 
+ où il définit le lambda calcul simplement typé.
+ Celui ci perd en dynamisme et permet d'effectuer moins de calcul mais possède
+ l'avantage de soulever les problèmes liés à la classification des données.
 \end_layout
 
 \begin_layout Subsubsection
@@ -373,7 +381,7 @@ règles de types
 Le lambda calcul non typé permet de formaliser une infinité de ....
  mais l'absence de type ne lui permet pas de vérifier la validité de ses
  calculs.
- Pour tout programmeur il parrait logique que l'expression 
+ Pour tout programmeur il parait logique que l'expression 
 \begin_inset Quotes eld
 \end_inset
 
@@ -382,8 +390,8 @@ if <entier> then <booléens> else <booléens> n'a pas de sens car il faudrait
  un entier.
  C'est pour cette raison que les types sont intérressants car ils permettent
  de palier à ces erreurs d'éxecution.
- Nous allons donc nous intérresser à l'implémentation des booléens dans
- le lambda calcul.
+ Nous allons donc nous intéresser à l'implémentation des booléens dans le
+ lambda calcul.
  Avant toute chose il faut définir la notion de type.
 \end_layout
 
@@ -400,12 +408,38 @@ T ::=             Type
 \end_layout
 
 \begin_layout Standard
-/* Ici je vais mettre les règles de dérivation qui sont dans le livre de
- Pierce */
+Nous allons maintenant utiliser une notation explicitant le typage des variables
+, 
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x:T.t signifie quand dans le terme t la variable liée x possède le type T.
+ Nous allons maintenant définir les règles de typage pour les lambda termes.
+ Pour déduire le type d'une variable à partir de son type est trivial: 
+\begin_inset Formula $\frac{x:T}{x:T}$
+\end_inset
+
+ (cette expression se lit en partant du numérateur, supposons une variable
+ x de type T, alors le type de la variable x est T).
+ Les abstractions quant à elles nécessitent deux supositions: 
+\begin_inset Formula $\frac{x:T1\: t:T2}{\Lambda x:T1.t\,:T1\rightarrow T2}$
+\end_inset
+
+ .
+ En effet si l'on possède le type de la variable x ainsi que celui du terme
+ t on peut donc conclure sur le type de l'abstraction qui sera une bijection
+ entre T1 et T2.
+ En suivant la même logique pour déterminer le type d'une application il
+ nous faut le type de l'abstraction de gauche et le type du terme de droite:
+ 
+\begin_inset Formula $\frac{t1:T1\rightarrow T2\; t2:T1}{t1\, t2\,:T2}$
+\end_inset
+
+ .
 \end_layout
 
 \begin_layout Subsubsection
-La securité engendrée par les systèmes de type
+La sécurité engendrée par les systèmes de type
 \end_layout
 
 \begin_layout Standard
@@ -413,7 +447,25 @@ Une des notions évoquée par Pierce dans son ouvrage est la sécurité offerte
  par les systèmes de types quant à la bonne éxecution du programme.
  En effet lors de la compilation dans un système de type statique les erreurs
  sont interceptées.
- Il faut maintenant définir deux notions escentielles, 
+ Il faut maintenant définir deux notions essentielles:
+\end_layout
+
+\begin_layout Standard
+Progress: soit t un terme correctement typé alors t est une valeur ou il
+ existe une dérivation telle que t->t'
+\end_layout
+
+\begin_layout Standard
+Preservation: si un terme est correctement typé alors si il existe une règle
+ de dérivation pour ce terme, le terme obtenu est lui aussi correctement
+ typé.
+\end_layout
+
+\begin_layout Standard
+Ces deux règles permettent d'affirmer que la dérivation d'un terme correctement
+ typé ne peut pas se terminer sur un état autre qu'un terme équivalent a
+ une valeur.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -430,16 +482,24 @@ Définition
 \end_layout
 
 \begin_layout Standard
-Les types dépendants permettent de determiner le type d'un terme a l'aide
+Les types dépendants permettent de déterminer le type d'un terme à l'aide
  de la valeur d'un autre terme auquel il est associé,
+\end_layout
+
+\begin_layout Standard
+Les types dépendants permettent de caractériser les termes en fonction de
+ leur valeur.
+ Si l'on pose l'expression a =>b dans un typage statique pour déterminer
+ le type de b on se base sur le type de a tandis que dans un système de
+ type dépendant, le type de b sera determiné à l'aide de la valeur de a.
+ Cela offre une souplesse supplémentaire dans l'évaluation des types en
+ acceptant plus de programmes que si l'on utilisait un typage statique.
+ Cependant la sécurité offerte par le système de type n'est pas altérée
+ c'est pour cette raison que les types dépendants sont une bonne alternative.
 \end_layout
 
 \begin_layout Subsubsection
 Règles de typage
-\end_layout
-
-\begin_layout Standard
-Ici mettre des règles de typage que je ne connais pas encore
 \end_layout
 
 \begin_layout Subsubsection
@@ -454,8 +514,274 @@ Avec le vecteur faire un exemple
 Implementation
 \end_layout
 
+\begin_layout Standard
+Dans cette partie il est question de l'implémentation du lambda calcul non
+ typé en précisant les choix de réalisation.
+ Le language choisi pour cette implémentation et qui le restera pour l'ensemble
+ de ce projet est Ocaml, un language fonctionnel dont la syntaxe permet
+ de se rapprocher au plus des définitions mathématiques, ce qui rend le
+ passage des définitions théoriques aux implémentations plus aisées.
+\end_layout
+
 \begin_layout Subsection
 Lieurs
+\end_layout
+
+\begin_layout Standard
+Le premier problème auquel j'ai été confronté fut la représentation qu'il
+ fallait donner des variables libres ainsi que des variables liées.
+ D'un point de vue algorithmique lors du parcours d'un terme determiné si
+ une variable est liée peut s'avérer complexe et nécéssiterait de nombreuses
+ opérations supplémentaires.
+ Dans le livre 
+\begin_inset Quotes eld
+\end_inset
+
+Types and programming languages
+\begin_inset Quotes erd
+\end_inset
+
+ l'auteur choisit de ne plus définir les variables par des charactères mais
+ avec des entiers.
+ C'est ce que l'on appel les indices de de Bruijn.
+ Prenons un exemple pour comprendre, le terme (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+x.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+y.xy)x peut se représenter de cette façon (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+10)2.
+ Dans cette représentation les variables sont représentées en fonction du
+ nombre de lieurs les précédant.
+ Ici 
+\begin_inset Quotes eld
+\end_inset
+
+y
+\begin_inset Quotes erd
+\end_inset
+
+ est représentée par l'entier 0 car elle est liée au premier lieur à sa
+ gauche.
+ Même raisonnement pour la première occurence de x, cependant la seconde
+ occurence de x est une variable libre elle est donc représentée par une
+ valeur au dessus de toutes les valeurs possibles.
+ Cette représentation permet donc de rendre l'implémentation plus aisée,
+ cependant lorsque l'on souhaite effectuer une réduction il faut introduire
+ une nouvelle opération, le 
+\begin_inset Quotes eld
+\end_inset
+
+shift
+\begin_inset Quotes erd
+\end_inset
+
+ comme expliqué dans l'ouvrage de Pierce.
+\end_layout
+
+\begin_layout Standard
+Dans un article 
+\begin_inset Quotes eld
+\end_inset
+
+A tutorial implementation of dependently typed lambda calculus
+\begin_inset Quotes erd
+\end_inset
+
+ il est question de la représentation des variables avec les indices de
+ de Bruijn mais cette fois ci on laisse les variables libres sous la forme
+ de caractère.
+ Le terme précédent s'écrirait donc (
+\begin_inset Formula $\Lambda$
+\end_inset
+
+.
+\begin_inset Formula $\Lambda$
+\end_inset
+
+.1 0)x .
+ Cette notation permet de supprimer cette l'opération de 
+\begin_inset Quotes eld
+\end_inset
+
+shift
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Voici donc l'implémentation que nous avons choisi des lambda terme en Ocaml.
+\end_layout
+
+\begin_layout LyX-Code
+type lambda_term =   
+\end_layout
+
+\begin_layout LyX-Code
+   | FreeVar of string    
+\end_layout
+
+\begin_layout LyX-Code
+   | BoundVar of int    
+\end_layout
+
+\begin_layout LyX-Code
+   | Abs of lambda_term   
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl of (lambda_term * lambda_term)
+\end_layout
+
+\begin_layout Standard
+Afin de s'implifier la lecture des lambda terme voici une fonction permettant
+ de convertir un lambda terme en chaîne de caractère.
+\end_layout
+
+\begin_layout LyX-Code
+let rec lambda_term_to_string t = 
+\end_layout
+
+\begin_layout LyX-Code
+   match t with 
+\end_layout
+
+\begin_layout LyX-Code
+   | FreeVar v -> v 
+\end_layout
+
+\begin_layout LyX-Code
+   | BoundVar v -> string_of_int v 
+\end_layout
+
+\begin_layout LyX-Code
+   | Abs x -> "[]." ^ lambda_term_to_string x 
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string
+ y ^ ")"
+\end_layout
+
+\begin_layout Subsection
+Substitution et réduction 
+\end_layout
+
+\begin_layout Standard
+Il faut maintenant définir l'opération de réduction, comme expliqué dans
+ le chapitre 1.1.3 cela équivaut à substituer les occurrences des variables
+ liées dans l'abstraction de gauche par les termes de droite.
+ J'ai donc choisi de définir tout d'abord une fonction récursive de substitution
+ afin de pouvoir l'utiliser plus tard dans la fonction de réduction.
+ La subtilité de cette fonction réside dans le fait que à chaque fois que
+ l'on rencontre un lieur il faut appeler la fonction substitution mais cette
+ fois ci avec l'indice de la variable liée incrémenté de un.
+ 
+\end_layout
+
+\begin_layout LyX-Code
+let rec substitution t indice tsub = 
+\end_layout
+
+\begin_layout LyX-Code
+   match t with 
+\end_layout
+
+\begin_layout LyX-Code
+   | FreeVar v -> FreeVar v 
+\end_layout
+
+\begin_layout LyX-Code
+   | BoundVar v -> if v = indice then tsub else BoundVar v 
+\end_layout
+
+\begin_layout LyX-Code
+   | Abs x -> Abs(substitution x (indice+1) tsub) 
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl (x,y) -> Appl(substitution x indice tsub,substitution y indice
+ tsub)
+\end_layout
+
+\begin_layout Standard
+On ne peut appliquer une réduction qu'à un terme dont le membre de gauche
+ est une abstraction.
+ Cette fonction de réduction se contente simplement d'appeler la fonction
+ substitution seulement sur les redex.
+ 
+\end_layout
+
+\begin_layout LyX-Code
+let reduction t = 
+\end_layout
+
+\begin_layout LyX-Code
+   match t with 
+\end_layout
+
+\begin_layout LyX-Code
+   | FreeVar v -> FreeVar v 
+\end_layout
+
+\begin_layout LyX-Code
+   | BoundVar v -> BoundVar v 
+\end_layout
+
+\begin_layout LyX-Code
+   | Abs x -> Abs(x) 
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl(Abs(x),y) -> substitution x 0 y 
+\end_layout
+
+\begin_layout LyX-Code
+   | Appl(x,y) -> failwith "erreur"
+\end_layout
+
+\begin_layout Standard
+Ici les applications n'étant pas considérées comme réductibles on renvoie
+ une erreur.
+ Ce choix d'implémentation sera expliqué par la suite lorsque nous aurons
+ définis la fonction d'évaluation.
+ Afin de réduire un terme jusqu'a sa forme normal si elle existe peut etre
+ considéré comme une opération de normalisation, mais étant donné que certains
+ termes ne peuvent pas se réduire nous avons décidé d'appeler cette fonction
+ évaluation.
+ Il existe de nombreuses stratégies afin de calculer les lambda termes,
+ nous avons choisis la stratégie 
+\begin_inset Quotes eld
+\end_inset
+
+call by name
+\begin_inset Quotes erd
+\end_inset
+
+ (c'est ainsi qu'elle est énoncée dans 
+\begin_inset Quotes eld
+\end_inset
+
+Types and programming languages
+\begin_inset Quotes erd
+\end_inset
+
+).
+ Cette stratégie consite a considérer l'ensemble du lambda terme, si celui
+ ci 
+\end_layout
+
+\begin_layout Standard
+call by name qui n'autorise pas l'évaluation a l'intérieur des abstractions.
 \end_layout
 
 \end_body
