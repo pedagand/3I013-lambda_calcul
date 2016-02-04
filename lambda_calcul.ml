@@ -40,17 +40,23 @@ match t with
 | BoundVar v -> BoundVar v 
 | Abs x -> Abs(x)
 | Appl(Abs(x),y) -> evaluation(reduction t)
+| Appl(BoundVar x,y) -> Appl(BoundVar x,y)
+| Appl(FreeVar x,y) -> Appl(FreeVar x,y)
 | Appl(x,y) -> evaluation(Appl(evaluation x, evaluation y))
+
 
 
 let x = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),Abs(BoundVar 0))
 let y = Appl(Abs(Appl(BoundVar 0, FreeVar "y")),FreeVar "a")
 let w = Appl(Appl(Abs(Abs(BoundVar 0)),FreeVar "x"),Abs(FreeVar "u"))
-let z = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),Abs(FreeVar "u"))
+let z = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),FreeVar "u")
+let test = Appl(Appl(Abs(BoundVar 0),FreeVar "u"),Abs(BoundVar 0))
 
 
 
-let () = Printf.printf "%s \n" (lambda_term_to_string (reduction (reduction x)))
+
+let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation z))
+let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test))
