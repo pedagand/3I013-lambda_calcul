@@ -753,13 +753,13 @@ let reduction t =
 Ici les applications n'étant pas considérées comme réductibles on renvoie
  une erreur.
  Ce choix d'implémentation sera expliqué par la suite lorsque nous aurons
- définis la fonction d'évaluation.
- Afin de réduire un terme jusqu'a sa forme normal si elle existe peut etre
- considéré comme une opération de normalisation, mais étant donné que certains
+ défini la fonction d'évaluation.
+ Afin de réduire un terme jusqu'à sa forme normale si elle existe peut être
+ considérée comme une opération de normalisation, mais étant donné que certains
  termes ne peuvent pas se réduire nous avons décidé d'appeler cette fonction
  évaluation.
- Il existe de nombreuses stratégies afin de calculer les lambda termes,
- nous avons choisis la stratégie 
+ Il existe de nombreuses stratégies pour calculer les lambda termes, nous
+ avons choisis la stratégie 
 \begin_inset Quotes eld
 \end_inset
 
@@ -776,8 +776,8 @@ Types and programming languages
 \end_inset
 
 ).
- Cette stratégie consite a considérer l'ensemble du lambda terme, si celui
- ci 
+ Cette stratégie consite à considérer l'ensemble du lambda terme, si celui
+ ci ....
 \end_layout
 
 \begin_layout Standard
