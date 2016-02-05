@@ -230,8 +230,6 @@ Pour tout programmeur il parait logique que l'expression
 \[
  \mathsf{if}\: 2\: \mathsf{then}\: \mathsf{true}\: \mathsf{else}\: \mathsf{false}
 \]
-\begin_inset Quotes eld
-\end_inset
 %
 n'a pas de sens car il faudrait que le résultat de l'expression de la
 condition soit un booléen et non un entier. Les types permettent de
@@ -336,6 +334,8 @@ règles de typage plus complexes et offrant plus de souplesse que le
 typage simple.
 
 \subsubsection{Règles de typage}
+
+\TODO{Ajouter une référence vers \citep{hottbook,thompson:types-fp}}
 
 Dans cette partie, il sera question de présenter un système de type
 dépendant comprenant quelques types de base simple ainsi que leurs
@@ -446,216 +446,110 @@ variable \(y\) est une variable libre que l'on représentera de façon
 nommée, sous la forme de caractère. Ce terme s'écrit donc
 \((\lambda. 0)\: y\).
 
-\if 0
-
-  Cette notation permet de supprimer cette
-l'opération de
-\begin_inset Quotes eld
-\end_inset
-
-shift
-\begin_inset Quotes erd
-\end_inset
-
-.
- Voici donc l'implémentation que nous avons choisi des lambda terme en Ocaml.
-\end_layout
-
-\begin_layout LyX-Code
+Voici donc l'implémentation que nous avons choisi des lambda terme en Ocaml :
+%
+\begin{verbatim}
 type lambda_term =   
-\end_layout
-
-\begin_layout LyX-Code
    | FreeVar of string    
-\end_layout
-
-\begin_layout LyX-Code
    | BoundVar of int    
-\end_layout
-
-\begin_layout LyX-Code
    | Abs of lambda_term   
-\end_layout
-
-\begin_layout LyX-Code
    | Appl of (lambda_term * lambda_term)
-\end_layout
+\end{verbatim}
 
-\begin_layout Standard
 Afin de s'implifier la lecture des lambda terme voici une fonction permettant
  de convertir un lambda terme en chaîne de caractère.
-\end_layout
-
-\begin_layout LyX-Code
+%
+\begin{verbatim}
 let rec lambda_term_to_string t = 
-\end_layout
-
-\begin_layout LyX-Code
    match t with 
-\end_layout
-
-\begin_layout LyX-Code
    | FreeVar v -> v 
-\end_layout
-
-\begin_layout LyX-Code
    | BoundVar v -> string_of_int v 
-\end_layout
-
-\begin_layout LyX-Code
    | Abs x -> "[]." ^ lambda_term_to_string x 
-\end_layout
-
-\begin_layout LyX-Code
    | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string
  y ^ ")"
-\end_layout
+\end{verbatim}
 
-\begin_layout Subsection
-Substitution et réduction 
-\end_layout
+\subsection{Substitution et réduction}
 
-\begin_layout Standard
-Il faut maintenant définir l'opération de réduction, comme expliqué dans
- le chapitre 1.1.3 cela équivaut à substituer les occurrences des variables
- liées dans l'abstraction de gauche par les termes de droite.
- J'ai donc choisi de définir tout d'abord une fonction récursive de substitution
- afin de pouvoir l'utiliser plus tard dans la fonction de réduction.
- La subtilité de cette fonction réside dans le fait que à chaque fois que
- l'on rencontre un lieur il faut appeler la fonction substitution mais cette
- fois ci avec l'indice de la variable liée incrémenté de un.
- 
-\end_layout
-
-\begin_layout LyX-Code
+Il faut maintenant définir l'opération de réduction. Comme expliqué
+précédemment, cela équivaut à substituer les occurrences des variables
+liées dans l'abstraction de gauche par les termes de droite.  J'ai
+donc choisi de définir tout d'abord une fonction récursive de
+substitution afin de pouvoir l'utiliser plus tard dans la fonction de
+réduction.  
+% 
+\begin{verbatim}
 let rec substitution t indice tsub = 
-\end_layout
-
-\begin_layout LyX-Code
    match t with 
-\end_layout
-
-\begin_layout LyX-Code
    | FreeVar v -> FreeVar v 
-\end_layout
-
-\begin_layout LyX-Code
    | BoundVar v -> if v = indice then tsub else BoundVar v 
-\end_layout
-
-\begin_layout LyX-Code
    | Abs x -> Abs(substitution x (indice+1) tsub) 
-\end_layout
+   | Appl (x,y) -> Appl(substitution x indice tsub,substitution y indice tsub)
+\end{verbatim}
 
-\begin_layout LyX-Code
-   | Appl (x,y) -> Appl(substitution x indice tsub,substitution y indice
- tsub)
-\end_layout
+La subtilité de cette fonction réside dans le fait que à
+chaque fois que l'on rencontre un lieur il faut appeler la fonction
+substitution mais cette fois ci avec l'indice de la variable liée
+incrémenté de un.
 
-\begin_layout Standard
-On ne peut appliquer une réduction qu'à un terme dont le membre de gauche
- est une abstraction.
- Cette fonction de réduction se contente simplement d'appeler la fonction
- substitution seulement sur les redex.
+On ne peut appliquer une réduction qu'à un terme dont le membre de
+gauche est une abstraction.  Cette fonction de réduction se contente
+simplement d'appeler la fonction substitution seulement sur les redex.
  
-\end_layout
-
-\begin_layout LyX-Code
+\begin{verbatim}
 let reduction t = 
-\end_layout
-
-\begin_layout LyX-Code
    match t with 
-\end_layout
-
-\begin_layout LyX-Code
    | FreeVar v -> FreeVar v 
-\end_layout
-
-\begin_layout LyX-Code
    | BoundVar v -> BoundVar v 
-\end_layout
-
-\begin_layout LyX-Code
    | Abs x -> Abs(x) 
-\end_layout
-
-\begin_layout LyX-Code
    | Appl(Abs(x),y) -> substitution x 0 y 
-\end_layout
-
-\begin_layout LyX-Code
    | Appl(x,y) -> failwith "erreur"
-\end_layout
+\end{verbatim}
 
-\begin_layout Standard
-Ici les applications n'étant pas considérées comme réductibles on renvoie
- une erreur.
- Ce choix d'implémentation sera expliqué par la suite lorsque nous aurons
- défini la fonction d'évaluation.
- Afin de réduire un terme jusqu'à sa forme normale si elle existe peut être
- considérée comme une opération de normalisation, mais étant donné que certains
- termes ne peuvent pas se réduire nous avons décidé d'appeler cette fonction
- évaluation.
- Il existe de nombreuses stratégies pour calculer les lambda termes, nous
- avons choisis la stratégie de reduction call by name (c'est ainsi qu'elle
- est énoncée dans 
-\begin_inset Quotes eld
-\end_inset
+Ici les applications n'étant pas considérées comme réductibles on
+renvoie une erreur.  Ce choix d'implémentation sera expliqué par la
+suite lorsque nous aurons défini la fonction d'évaluation.  Afin de
+réduire un terme jusqu'à sa forme normale si elle existe peut être
+considérée comme une opération de normalisation, mais étant donné que
+certains termes ne peuvent pas se réduire nous avons décidé d'appeler
+cette fonction évaluation. 
 
-Types and programming languages
-\begin_inset Quotes erd
-\end_inset
+Il existe de nombreuses stratégies pour calculer les lambda termes,
+nous avons choisis la stratégie de reduction
+normale~\citep{pierce:tapl}, aussi appelée ``appel par nom''.  Cette
+stratégie consite à réduire le redex le plus à gauche. Voici donc une
+implémentation de cette stratégie :
 
-).
- Cette stratégie consite à réduire le membre gauche des redex au maximum
- mais à ne jamais modifier le membre de gauche.
- Voici donc une implémentation de cette stratégie:
-\end_layout
-
-\begin_layout LyX-Code
-let rec evaluation t =  
-\end_layout
-
-\begin_layout LyX-Code
+\begin{verbatim}
+let rec evaluation t =
    match t with  
-\end_layout
-
-\begin_layout LyX-Code
    | FreeVar v -> FreeVar v  
-\end_layout
-
-\begin_layout LyX-Code
    | BoundVar v -> BoundVar v  
-\end_layout
-
-\begin_layout LyX-Code
    | Abs x -> Abs(x) 
-\end_layout
-
-\begin_layout LyX-Code
    | Appl(Abs(x),y) -> evaluation(reduction t) 
-\end_layout
-
-\begin_layout LyX-Code
    | Appl(BoundVar x,y) -> Appl(BoundVar x,y)  
-\end_layout
-
-\begin_layout LyX-Code
    | Appl(FreeVar x,y) -> Appl(FreeVar x,y)  
-\end_layout
-
-\begin_layout LyX-Code
    | Appl(x,y) -> evaluation(Appl(evaluation x, y))
-\end_layout
+\end{verbatim}
 
-\begin_layout Standard
-Avec l'ensemble de ces fonctions nous avons donc implémenté le lambda calcul
- non typé.
- La suite du projet consistera donc comme le sujet l'indique en une implémentati
-on d'un système de type dépendant en Ocaml.
-\end_layout
+Avec l'ensemble de ces fonctions nous avons donc implémenté le lambda
+calcul non typé.
 
-\fi
+
+\subsection{Types dépendants}
+
+
+La suite du projet consistera donc comme le sujet l'indique en une
+implémentation d'un système de type dépendant en Ocaml.
+
+\TODO{Expliquer le challenge : système de type = relation, type checker = fonction}
+\TODO{Citer \citep{loeh:tuto-dependant,coquand:mini-tt}}
+
+
+%% * Outro
+
+\bibliographystyle{abbrvnat}
+\bibliography{prerapport.bib} 
+
 
 \end{document}
