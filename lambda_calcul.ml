@@ -81,3 +81,26 @@ let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test))
 let () = Printf.printf "\n"
 let arguments3 = Appl(Appl(Abs(BoundVar 0),Abs(BoundVar 0)),FreeVar "y")
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation arguments3))
+
+
+
+
+		       (* Les entiers de church *)
+
+let rec church_num n =
+  match n with
+  | 0 -> BoundVar 0
+  | n -> Appl(BoundVar 1,(church_num (n-1)))
+		       
+let int_to_lambda_term n =
+  Abs(Abs(church_num n))
+
+
+let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 0))
+let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 1))
+let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 2))
+    
+
+
+  (* let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 0)) *)
+						 
