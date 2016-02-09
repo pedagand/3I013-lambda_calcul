@@ -95,12 +95,28 @@ let rec church_num n =
 let int_to_lambda_term n =
   Abs(Abs(church_num n))
 
+let rec lambda_term_to_int t =
+  match t with
+  | BoundVar x -> 0
+  | Abs(Abs(x)) -> 0 + (lambda_term_to_int x)
+  | Appl(BoundVar x,y) -> 1 + (lambda_term_to_int y)
+  | FreeVar y -> failwith "erreur"
+  | Appl(x,y) -> failwith "erreur"
+  | Abs(x) -> failwith "erreur"
+		       
+						 
+  
+
 
 let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 0))
 let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 1))
 let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 2))
     
 
+let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 2))
+let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 1))
+let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 0))
+		       
 
-  (* let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 0)) *)
+		       
 						 
