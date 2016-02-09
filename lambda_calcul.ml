@@ -38,7 +38,7 @@ let rec evaluation t =
 match t with 
 | FreeVar v -> FreeVar v 
 | BoundVar v -> BoundVar v 
-| Abs x -> Abs(x)
+| Abs x -> Abs x
 | Appl(Abs(x),y) -> evaluation(reduction t)
 | Appl(BoundVar x,y) -> Appl(BoundVar x,y)
 | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
@@ -52,8 +52,22 @@ let w = Appl(Appl(Abs(Abs(BoundVar 0)),FreeVar "x"),Abs(FreeVar "u"))
 let z = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),FreeVar "u")
 let test = Appl(Appl(Abs(BoundVar 0),FreeVar "u"),Abs(BoundVar 0))
 
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
+(* let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation z))
+let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test)) *)
+
+let lambda_true = Abs(Abs(BoundVar 1))
+let lambda_false = Abs(Abs(BoundVar 0))
+let lambda_if_else = Abs(Abs(Abs(Appl(Appl(BoundVar 1,BoundVar 0),BoundVar 2))))
+
+
+(* a faire mais c'est une appl d'une appl d'une appl *)
+let test = Appl(Appl(lambda_if_else,lambda_true),lambda_false)
+
+let () = Printf.printf "%s \n" (lambda_term_to_string lambda_true)
+let () = Printf.printf "%s \n" (lambda_term_to_string lambda_false)
+let () = Printf.printf "%s \n" (lambda_term_to_string lambda_if_else)
+let () = Printf.printf "%s \n" (lambda_term_to_string test)
 let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test))
