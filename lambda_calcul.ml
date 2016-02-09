@@ -45,25 +45,12 @@ match t with
 | Appl(x,y) -> evaluation(Appl(evaluation x, y))
 
 
-
-let x = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),Abs(BoundVar 0))
-let y = Appl(Abs(Appl(BoundVar 0, FreeVar "y")),FreeVar "a")
-let w = Appl(Appl(Abs(Abs(BoundVar 0)),FreeVar "x"),Abs(FreeVar "u"))
-let z = Appl(Abs(Appl(BoundVar 0,BoundVar 0)),FreeVar "u")
-let test = Appl(Appl(Abs(BoundVar 0),FreeVar "u"),Abs(BoundVar 0))
-
-(* let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
-let () = Printf.printf "%s \n" (lambda_term_to_string (x))
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation x))
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation z))
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test)) *)
+			 (* Les booléens *)
 
 let lambda_true = Abs(Abs(BoundVar 1))
 let lambda_false = Abs(Abs(BoundVar 0))		      
-(* let lambda_if_else = Abs(Abs(Abs(Appl(BoundVar 2,(Appl(BoundVar 1,BoundVar 0)))))) *)
 let lambda_if_else = Abs(Abs(Abs(Appl(Appl(BoundVar 2, BoundVar 1),BoundVar 0))))
 
-(* a faire mais c'est une appl d'une appl d'une appl *)
 			
 let test2 = Appl(Appl(lambda_if_else,lambda_false),FreeVar "y")
   
@@ -85,7 +72,13 @@ let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation arguments3))
 
 
 
+
+
+
+
+
 		       (* Les entiers de church *)
+(* Fonctions de manipulation *)
 
 let rec church_num n =
   match n with
@@ -103,11 +96,18 @@ let rec lambda_term_to_int t =
   | FreeVar y -> failwith "erreur"
   | Appl(x,y) -> failwith "erreur"
   | Abs(x) -> failwith "erreur"
+
+(* Défintions des termes *)
+
+let plus = Abs(Abs(Abs(Abs(Appl(Appl(Appl(Appl (BoundVar 3, BoundVar 1),BoundVar 2),BoundVar 1),BoundVar 0)))))
+let plustest = Appl(Appl(plus,(int_to_lambda_term 0)),(int_to_lambda_term 0))
 		       
 						 
-  
+let () = Printf.printf "%s \n" (lambda_term_to_string(plustest))
+let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(plustest)))
 
 
+(*
 let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 0))
 let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 1))
 let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 2))
@@ -115,8 +115,8 @@ let () = Printf.printf "%s \n" (lambda_term_to_string (int_to_lambda_term 2))
 
 let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 2))
 let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 1))
-let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 0))
+let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 0)) *)
 		       
 
-		       
+
 						 
