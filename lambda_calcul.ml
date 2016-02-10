@@ -101,10 +101,14 @@ let rec lambda_term_to_int t =
 
 let plus = Abs(Abs(Abs(Abs(Appl(Appl(Appl(Appl (BoundVar 3, BoundVar 1),BoundVar 2),BoundVar 1),BoundVar 0)))))
 let plustest = Appl(Appl(plus,(int_to_lambda_term 0)),(int_to_lambda_term 0))
-		       
+let succ = Abs(Abs(Abs(Appl(BoundVar 1,Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0)))))
+let testsucc = Appl(succ,(int_to_lambda_term 0))
+		
+
+let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation testsucc))
 						 
-let () = Printf.printf "%s \n" (lambda_term_to_string(plustest))
-let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(plustest)))
+(*let () = Printf.printf "%s \n" (lambda_term_to_string(plustest))
+let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(plustest))) *)
 
 
 (*
