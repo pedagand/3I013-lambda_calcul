@@ -31,7 +31,7 @@ match t with
 | BoundVar v -> BoundVar v
 | Abs x -> Abs(x)
 | Appl(Abs(x),y) -> substitution x 0 y
-| Appl(x,y) -> failwith "erreur"
+| Appl(x,y) -> failwith "erreur reduction"
 
 
 let rec evaluation t = 
@@ -44,7 +44,25 @@ match t with
 | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
 | Appl(x,y) -> evaluation(Appl(evaluation x, y))
 
+(* let rec reduction_forte t = 
+match t with 
+| FreeVar v -> FreeVar v 
+| BoundVar v -> BoundVar v
+| Abs x -> Abs(reduction_forte x)
+| Appl(Abs(x),y) -> reduction_forte(substitution x 0 y)
+| Appl(x,y) -> (Appl(reduction_forte x, reduction_forte y)) *)
 
+
+let rec reduction_forte t = 
+match t with
+| FreeVar v -> FreeVar v 
+| BoundVar v -> BoundVar v
+| Abs x -> Abs(reduction_forte x)
+| Appl(BoundVar x,y) -> Appl(BoundVar x, reduction_forte y)
+| Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y)
+| Appl(Abs(x),y) -> reduction_forte(substitution x 0 (reduction_forte y))
+| Appl(x,y) -> reduction_forte(Appl(reduction_forte x ,reduction_forte y)) 
+	       
 			 (* Les booléens *)
 
 let lambda_true = Abs(Abs(BoundVar 1))
@@ -93,19 +111,23 @@ let rec lambda_term_to_int t =
   | BoundVar x -> 0
   | Abs(Abs(x)) -> 0 + (lambda_term_to_int x)
   | Appl(BoundVar x,y) -> 1 + (lambda_term_to_int y)
-  | FreeVar y -> failwith "erreur"
-  | Appl(x,y) -> failwith "erreur"
-  | Abs(x) -> failwith "erreur"
+  | FreeVar y -> failwith " to_int FreeVar erreur"
+  | Appl(x,y) -> failwith "to_int Appl erreur"
+  | Abs(x) -> failwith "to_int Abs erreur"
 
 (* Défintions des termes *)
 
 let plus = Abs(Abs(Abs(Abs(Appl(Appl(Appl(Appl (BoundVar 3, BoundVar 1),BoundVar 2),BoundVar 1),BoundVar 0)))))
-let plustest = Appl(Appl(plus,(int_to_lambda_term 0)),(int_to_lambda_term 0))
+let plus = Abs(Abs(Abs(Abs(Appl(Appl(BoundVar 3,BoundVar 1),Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0))))))
+let plustest = Appl(Appl(plus,(int_to_lambda_term 2)),(int_to_lambda_term 2))
 let succ = Abs(Abs(Abs(Appl(BoundVar 1,Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0)))))
-let testsucc = Appl(succ,(int_to_lambda_term 0))
+let testsucc = Appl(succ,(int_to_lambda_term 2))
 		
-
-let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation testsucc))
+(*let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation plustest))
+let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte(reduction_forte(reduction_forte plustest)))) *)
+let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte testsucc))
+let () = Printf.printf "%d \n" (lambda_term_to_int(reduction_forte testsucc))
+(*let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte plustest)) *) 
 						 
 (*let () = Printf.printf "%s \n" (lambda_term_to_string(plustest))
 let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(plustest))) *)
