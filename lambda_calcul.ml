@@ -78,9 +78,10 @@ match t with
 | BoundVar v -> BoundVar v
 | Abs x -> Abs(relie_libre i 0 (reduction_forte (substitution x 0 (FreeVar (string_of_int i))) (i+1)))
 | Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y i)
-| Appl(Abs(x),y) -> reduction_forte (substitution x 0 y) i
-| Appl(x,y) -> reduction_forte (Appl((reduction_forte x i),y)) i
+| Appl(Abs(x),y) -> reduction_forte(substitution x 0 y) i
+| Appl(x,y) -> reduction_forte (Appl((reduction x ),y)) i
 
+(* | Appl(Abs(x),Appl(y,z)) -> Appl(Abs(x),(Appl(y,z))) *)
 (* | Appl(Abs(x),Appl(y,z)) -> reduction_forte (Appl(Abs(x),(reduction_forte(Appl(y,z)) i))) i *)
 	       
 			 (* Les booléens *)
@@ -139,7 +140,7 @@ let rec lambda_term_to_int t =
 
 (* let plus = Abs(Abs(Abs(Abs(Appl(Appl(Appl(Appl (BoundVar 3, BoundVar 1),BoundVar 2),BoundVar 1),BoundVar 0))))) *)
 let plus = Abs(Abs(Abs(Abs(Appl(Appl(BoundVar 3,BoundVar 1),Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0))))))
-let plustest = Appl(Appl(plus,(int_to_lambda_term 1)),(int_to_lambda_term 0))
+let plustest = Appl(Appl(plus,(int_to_lambda_term 2)),(int_to_lambda_term 2))
 let succ = Abs(Abs(Abs(Appl(BoundVar 1,Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0)))))
 
 
@@ -148,9 +149,9 @@ let testsucc = Appl(succ,(int_to_lambda_term 4))
 
 let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte testsucc 0))
 let () = Printf.printf "%d \n" (lambda_term_to_int(reduction_forte testsucc 0))		
-(*
+
 let () = Printf.printf "%s \n" (lambda_term_to_string(plustest))
-let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte plustest 0)) *)  
+let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte plustest 0)) 
 (*
 let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte testsucc))
 let () = Printf.printf "%d \n" (lambda_term_to_int(reduction_forte testsucc))
