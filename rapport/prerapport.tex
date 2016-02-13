@@ -172,7 +172,7 @@ terminent pas : ceux-ci n'ont pas de forme normale.
 \subsubsection{Les entiers de Church}
 
 Malgré son apparente simplicité, le lambda calcul permet de définir
-énormément de concepts intéressants. Ici, nous allons comment créer
+énormément de concepts intéressants. Ici, nous allons voir comment créer
 les entiers naturels \textit{ex nihilo} en utilisant un \emph{codage à
   la Church}.
 
@@ -208,10 +208,6 @@ De la même manière, on construit l'addition de deux nombres \(m\) et
 
 \subsection{Lambda calcul simplement typé}
 
-\TODO{Ici il faut faire une transition avec le fait que le lambda
-  calcul non typé correspond au typage dynamique, alors que le lambda
-  calcul est la version typage statique.}
-
 
 Le lambda calcul simplement typé~\citep{church:simple-type} est une
 extension du lambda calcul. Celui ci perd en dynamisme et permet
@@ -221,10 +217,9 @@ problèmes liés à la classification des données.
 
 \subsubsection{Règles de typage}
 
-\TODO{Le lambda calcul non typé permet de formaliser une infinité de ....
- mais l'absence de type ne lui permet pas de vérifier la validité de ses
- calculs.}
-
+Le lambda calcul non typé permet de formaliser une infinité de termes
+mais l'absence de type ne lui permet pas de vérifier la validité de ses
+calculs.
 Pour tout programmeur il parait logique que l'expression
 %
 \[
@@ -266,7 +261,10 @@ Les règles de typage sont définies en Figure~\ref{fig:typage-simple}.
          {\Gamma \vdash \lambda x. t \,:\, A\rightarrow B}\mbox{(Abs)} \\
 &  \cfrac{\Gamma \vdash f : A\rightarrow B \quad
           \Gamma \vdash s : A}
-         {\Gamma\vdash f\: s : B}\mbox{(App)}
+         {\Gamma\vdash f\: s : B}\mbox{(App)} \\
+&  \mathsf{bool}:\mathsf{true}|\mathsf{false}\mbox{(Bool)} \\
+&  \cfrac{t1:\mathsf{bool}\,t2:T\,t3:T}
+         {\Gamma\vdash if t1 then t2 else t3}\mbox{(If-else)} \\
 \end{align*}
 
 \caption{Typage (lambda calcul simplement typé)}
@@ -283,7 +281,10 @@ abstractions. L'abstraction construit un type de la forme \(A
 \Rightarrow B\) : il faut donc que la variable associée au lambda
 terme soit de type \(A\) et le résultat de type \(B\).
 
-\TODO{Justifier la règle App}
+La règle (App) sécifie le typage de l'application. Une application pour etre 
+considérée comme une redex doit avoir un membre de gauche une abstraction, 
+donc un type A \(A\rightarrow B\) et pour le membre de droite un terme 
+de type A. 
                
 
 \subsubsection{Sémantique statique}
@@ -312,19 +313,33 @@ vecteurs de bits de même taille.
 
 Dans un système de type statique on ne peut pas faire de restriction
 quant à la taille que feront les deux vecteurs.  
-\TODO{présenter le code en OCaml}
+Pour illustrer la différence entre les deux systèmes de type, voici une 
+implémentation en Ocaml:
 
 \begin{verbatim}
- code code code
+let rec andvector v1 v2 = 
+match (v1,v2) with 
+| ([],[]) -> []
+| (x::y,[]) -> x::(andvector y [])
+| ([],x::y) -> x::(andvector y [])
+| (x::y,z::t) -> if x = z then x::(andvector y t) else false::(andvector y t);;
 \end{verbatim}
 
 Grâce à la théorie des types dépendants il est possible de demander
 explicitement deux vecteurs de taille \(n\) et donc d'effectuer le
 ``et logique'' sans problème. 
-\TODO{présenter le code Agda}
+En voici une implémentation avec le language Agda qui premet d'implémenter 
+les types dépendants.
 
 \begin{verbatim}
- code code code
+ data Vec : n -> Set where
+  nil : Vec 0
+  cons : V {n} -> (b : Bool)(xs : Vec n) -> Vec (1 + n)
+
+and : V {n} -> Vec n -> Vec n -> Vec n
+and nil nil = nil
+and (cons true xs) (cons b2 ys) = cons b2 (and xs ys)
+and (cons false xs) (cons b2 ys) = cons false (and xs ys)
 \end{verbatim}
 
 
@@ -335,16 +350,14 @@ typage simple.
 
 \subsubsection{Règles de typage}
 
-\TODO{Ajouter une référence vers \citep{hottbook,thompson:types-fp}}
+
 
 Dans cette partie, il sera question de présenter un système de type
-dépendant comprenant quelques types de base simple ainsi que leurs
-règles d'introduction et d'élimination.
+dépendant comprenant quelques types de base simple \citep{hottbook,thompson:types-fp}ainsi que leurs règles d'introduction et d'élimination. 
 
 Nous considérons les types de base suivant: le type booléen
 (\textsf{bool}), l'ensemble vide (\textsf{void}) ainsi que l'ensemble
-unitaire (\textsf{unit}). \TODO{Les introduire dans le lambda calcul
-  simple plutôt et réutiliser tel quel ici.} Ces règles étant
+unitaire (\textsf{unit}). Ces règles étant
 similaires, nous concentrons notre attention sur le type booléen. Les
 règles d'introduction (BoolI1) et (BoolI2) sont assez simples puisque
 peu importe le contexte \textsf{true} et \textsf{false} sont des
@@ -540,16 +553,18 @@ calcul non typé.
 
 
 La suite du projet consistera donc comme le sujet l'indique en une
-implémentation d'un système de type dépendant en Ocaml.
-
-\TODO{Expliquer le challenge : système de type = relation, type checker = fonction}
-\TODO{Citer \citep{loeh:tuto-dependant,coquand:mini-tt}}
+implémentation d'un système de type dépendant en Ocaml. En effet dans 
+ce rapport il est question d'une déclaration des types dépendants
+mais pour en faire une application concrète il va falloir modéliser ces 
+définitions au sein d'un algorithme. \citep{loeh:tuto-dependant,coquand:mini-tt}
 
 
 %% * Outro
 
+\clearpage
+
 \bibliographystyle{abbrvnat}
-\bibliography{prerapport.bib} 
+\bibliography{prerapport.bib}  
 
 
 \end{document}
