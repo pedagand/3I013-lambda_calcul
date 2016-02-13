@@ -1,9 +1,53 @@
+open Sexplib
+
+(*
+  To load in the OCaml toplevel:
+  
+  #use "topfind";;
+  #require "sexplib";;
+ 
+*)
+
 type lambda_term =
   | FreeVar of string 
   | BoundVar of int 
   | Abs of lambda_term
   | Appl of (lambda_term * lambda_term)
+
 (* rajouter constructeur des vrais ect... *)
+
+(* A simple parser *)
+
+let rec parse env t 
+    = let rec lookup_var env n v
+        = match env with
+        | [] -> FreeVar v
+        | w :: env when v = w -> BoundVar n
+        | _ :: env -> lookup_var env (n+1) v 
+      in
+      match t with
+      | Sexp.List [Sexp.Atom "lambda"; Sexp.Atom var; body] -> 
+         Abs (parse (var :: env) body)
+      | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars; body] -> 
+         let vars = List.map (function 
+           | Sexp.Atom v -> v
+           | _ -> failwith "Parser: invalid variable") vars 
+         in
+         List.fold_right 
+           (fun var b -> Abs b)
+           vars
+           (parse (List.append (List.rev vars) env) body)
+      | Sexp.Atom v -> lookup_var env 0 v
+      | Sexp.List (f :: args) -> 
+         List.fold_left 
+           (fun x y -> Appl (x, y))
+           (parse env f) 
+           (List.map (parse env) args)
+      | _ -> failwith "Parser: ill-formed input."
+
+let read t = parse [] (Sexp.of_string t)
+
+
 
 
 let rec lambda_term_to_string t = 
