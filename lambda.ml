@@ -132,31 +132,6 @@ let rec reduction_forte t i
 (* | Appl(Abs(x),Appl(y,z)) -> Appl(Abs(x),(Appl(y,z))) *)
 (* | Appl(Abs(x),Appl(y,z)) -> reduction_forte (Appl(Abs(x),(reduction_forte(Appl(y,z)) i))) i *)
 	       
-			 (* Les booléens *)
-
-let lambda_true = Abs(Abs(BoundVar 1))
-let lambda_false = Abs(Abs(BoundVar 0))		      
-let lambda_if_else = Abs(Abs(Abs(Appl(Appl(BoundVar 2, BoundVar 1),BoundVar 0))))
-
-			
-let test2 = Appl(Appl(lambda_if_else,lambda_false),FreeVar "y")
-  
-let test = Appl(Appl(Appl(lambda_if_else,lambda_false),FreeVar "y"),FreeVar "x")
-(*let test3 = Appl(lambda_if_else, *)
-
-(* let () = Printf.printf "%s \n" (lambda_term_to_string lambda_true)
-let () = Printf.printf "%s \n" (lambda_term_to_string lambda_false)
-let () = Printf.printf "%s \n" (lambda_term_to_string lambda_if_else)
-let () = Printf.printf "%s \n" (lambda_term_to_string test)
-let () = Printf.printf "\n"
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test2))
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test))
-
-let () = Printf.printf "\n"
-let arguments3 = Appl(Appl(Abs(BoundVar 0),Abs(BoundVar 0)),FreeVar "y")
-let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation arguments3)) *)
-
-
 
 
 
