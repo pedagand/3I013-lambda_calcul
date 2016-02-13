@@ -14,9 +14,10 @@ type lambda_term =
   | Abs of lambda_term
   | Appl of (lambda_term * lambda_term)
 
-(* rajouter constructeur des vrais ect... *)
+(* TODO: remember the name of the abstractions, for pretty-printing *)
+(* TODO: rajouter constructeur des vrais ect... *)
 
-(* A simple parser *)
+(** * A simple parser *)
 
 let rec parse env t 
     = let rec lookup_var env n v
@@ -48,8 +49,9 @@ let rec parse env t
 let read t = parse [] (Sexp.of_string t)
 
 
+(** * A simple printer *)
 
-
+(* TODO: print S-expression instead. *)
 let rec lambda_term_to_string t = 
   match t with
   | FreeVar v -> v
@@ -57,37 +59,39 @@ let rec lambda_term_to_string t =
   | Abs x -> "[]." ^ lambda_term_to_string x 
   | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ ")"
 
-let rec substitution t var tsub= 
-match t with 
-| FreeVar v -> FreeVar v 
-| BoundVar v -> if v = var then tsub else BoundVar v
-| Abs x -> Abs(substitution x (var+1) tsub)
-| Appl (x,y) -> Appl(substitution x var tsub,substitution y var tsub)
+(** * Reduction *)
+
+let rec substitution t var tsub 
+    = match t with 
+    | FreeVar v -> FreeVar v 
+    | BoundVar v when v = var -> tsub
+    | BoundVar v -> BoundVar v
+    | Abs x -> Abs(substitution x (var+1) tsub)
+    | Appl (x,y) -> Appl(substitution x var tsub,substitution y var tsub)
 
 
+(* XXX: Unnecessarily complex: it is enough to compare the raw terms *)
+let alpha_equiv terme1 terme2 = 
+  lambda_term_to_string terme1 = lambda_term_to_string terme2
 
-let alpha_equiv terme_un terme_deux = 
-(lambda_term_to_string terme_un) = (lambda_term_to_string terme_deux)
+let reduction t 
+    = match t with
+    | FreeVar v -> FreeVar v
+    | BoundVar v -> BoundVar v
+    | Abs x -> Abs(x)
+    | Appl(Abs(x),y) -> substitution x 0 y
+    | Appl(x,y) -> failwith "erreur reduction"
 
 
-let reduction t = 
-match t with
-| FreeVar v -> FreeVar v
-| BoundVar v -> BoundVar v
-| Abs x -> Abs(x)
-| Appl(Abs(x),y) -> substitution x 0 y
-| Appl(x,y) -> failwith "erreur reduction"
-
-
-let rec evaluation t = 
-match t with 
-| FreeVar v -> FreeVar v 
-| BoundVar v -> BoundVar v 
-| Abs x -> Abs x
-| Appl(Abs(x),y) -> evaluation(reduction t)
-| Appl(BoundVar x,y) -> Appl(BoundVar x,y)
-| Appl(FreeVar x,y) -> Appl(FreeVar x,y)
-| Appl(x,y) -> evaluation(Appl(evaluation x, y))
+let rec evaluation t 
+    = match t with 
+    | FreeVar v -> FreeVar v 
+    | BoundVar v -> BoundVar v 
+    | Abs x -> Abs x
+    | Appl(Abs(x),y) -> evaluation(reduction t)
+    | Appl(BoundVar x,y) -> Appl(BoundVar x,y)
+    | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
+    | Appl(x,y) -> evaluation(Appl(evaluation x, y))
 
 (* let rec reduction_forte t = 
 match t with 
@@ -108,22 +112,22 @@ match t with
 | Appl(Abs(x),y) -> reduction_forte(substitution x 0 (reduction_forte y))
 | Appl(x,y) -> reduction_forte(Appl(reduction_forte x ,reduction_forte y)) *)
 
-let rec relie_libre i bv t =
-match t with 
-| BoundVar v -> BoundVar v
-| FreeVar v -> if v = string_of_int i then BoundVar bv else FreeVar v
-| Abs(x) -> Abs(relie_libre i (bv + 1) x)
-| Appl(x,y) -> Appl(relie_libre i bv x,relie_libre i bv y)
+let rec relie_libre i bv t 
+    = match t with 
+    | BoundVar v -> BoundVar v
+    | FreeVar v when v = string_of_int i -> BoundVar bv
+    | FreeVar v -> FreeVar v
+    | Abs(x) -> Abs(relie_libre i (bv + 1) x)
+    | Appl(x,y) -> Appl(relie_libre i bv x,relie_libre i bv y)
 
-
-let rec reduction_forte t i = 
-match t with 
-| FreeVar v -> FreeVar v
-| BoundVar v -> BoundVar v
-| Abs x -> Abs(relie_libre i 0 (reduction_forte (substitution x 0 (FreeVar (string_of_int i))) (i+1)))
-| Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y i)
-| Appl(Abs(x),y) -> reduction_forte(substitution x 0 y) i
-| Appl(x,y) -> reduction_forte (Appl((reduction x ),y)) i
+let rec reduction_forte t i 
+    = match t with 
+    | FreeVar v -> FreeVar v
+    | BoundVar v -> BoundVar v
+    | Abs x -> Abs(relie_libre i 0 (reduction_forte (substitution x 0 (FreeVar (string_of_int i))) (i+1)))
+    | Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y i)
+    | Appl(Abs(x),y) -> reduction_forte(substitution x 0 y) i
+    | Appl(x,y) -> reduction_forte (Appl((reduction x ),y)) i
 
 (* | Appl(Abs(x),Appl(y,z)) -> Appl(Abs(x),(Appl(y,z))) *)
 (* | Appl(Abs(x),Appl(y,z)) -> reduction_forte (Appl(Abs(x),(reduction_forte(Appl(y,z)) i))) i *)
