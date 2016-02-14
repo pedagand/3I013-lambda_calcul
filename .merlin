@@ -1,3 +1,6 @@
 PKG sexplib
 PKG oUnit
-S test/
+S .
+S test
+B _build
+B _build/test
