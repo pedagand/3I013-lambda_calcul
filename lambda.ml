@@ -7,7 +7,6 @@ open Sexplib
   #require "sexplib";;
  
 *)
-
 type lambda_term =
   | FreeVar of string 
   | BoundVar of int 
@@ -47,7 +46,6 @@ let rec parse env t
       | _ -> failwith "Parser: ill-formed input."
 
 let read t = parse [] (Sexp.of_string t)
-
 
 (** * A simple printer *)
 
