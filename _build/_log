@@ -1,0 +1,70 @@
+### Starting build.
+# Target: test.ml.depends, tags: { extension:ml, file:test.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules test.ml > test.ml.depends
+# Target: test/booleanT.ml.depends, tags: { extension:ml, file:test/booleanT.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules test/booleanT.ml > test/booleanT.ml.depends
+# Target: boolean.ml.depends, tags: { extension:ml, file:boolean.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules boolean.ml > boolean.ml.depends
+# Target: lambda.ml.depends, tags: { extension:ml, file:lambda.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules lambda.ml > lambda.ml.depends
+# Target: lambda.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:lambda.cmo, file:lambda.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o lambda.cmo lambda.ml
+# Target: boolean.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:boolean.cmo, file:boolean.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o boolean.cmo boolean.ml
+# Target: test/natT.ml.depends, tags: { extension:ml, file:test/natT.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules test/natT.ml > test/natT.ml.depends
+# Target: nat.ml.depends, tags: { extension:ml, file:nat.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules nat.ml > nat.ml.depends
+# Target: nat.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:nat.cmo, file:nat.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o nat.cmo nat.ml
+# Target: test/parserT.ml.depends, tags: { extension:ml, file:test/parserT.ml, ocaml, ocamldep, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamldep -package oUnit -package sexplib -modules test/parserT.ml > test/parserT.ml.depends
+# Target: test/booleanT.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:test/booleanT.cmo, file:test/booleanT.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test/booleanT.cmo test/booleanT.ml
++ ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test/booleanT.cmo test/booleanT.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test/natT.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:test/natT.cmo, file:test/natT.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test/natT.cmo test/natT.ml
++ ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test/natT.cmo test/natT.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test/parserT.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:test/parserT.cmo, file:test/parserT.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test/parserT.cmo test/parserT.ml
++ ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test/parserT.cmo test/parserT.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:test.cmo, file:test.ml, implem, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test.cmo test.ml
++ ocamlfind ocamlc -c -package oUnit -package sexplib -I test -o test.cmo test.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: lambda.cmx, tags: { compile, extension:cmx, extension:ml, file:lambda.cmx, file:lambda.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o lambda.cmx lambda.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o lambda.cmx lambda.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: boolean.cmx, tags: { compile, extension:cmx, extension:ml, file:boolean.cmx, file:boolean.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o boolean.cmx boolean.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o boolean.cmx boolean.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: nat.cmx, tags: { compile, extension:cmx, extension:ml, file:nat.cmx, file:nat.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o nat.cmx nat.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o nat.cmx nat.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test/booleanT.cmx, tags: { compile, extension:cmx, extension:ml, file:test/booleanT.cmx, file:test/booleanT.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test/booleanT.cmx test/booleanT.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test/booleanT.cmx test/booleanT.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test/natT.cmx, tags: { compile, extension:cmx, extension:ml, file:test/natT.cmx, file:test/natT.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test/natT.cmx test/natT.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test/natT.cmx test/natT.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test/parserT.cmx, tags: { compile, extension:cmx, extension:ml, file:test/parserT.cmx, file:test/parserT.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test/parserT.cmx test/parserT.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test/parserT.cmx test/parserT.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test.cmx, tags: { compile, extension:cmx, extension:ml, file:test.cmx, file:test.ml, implem, native, ocaml, package(oUnit), package(sexplib), quiet, traverse }
+ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test.cmx test.ml
++ ocamlfind ocamlopt -c -package oUnit -package sexplib -I test -o test.cmx test.ml
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Target: test.native, tags: { dont_link_with, extension:native, file:test.native, link, native, ocaml, package(oUnit), package(sexplib), program, quiet, traverse }
+ocamlfind ocamlopt -linkpkg -package oUnit -package sexplib lambda.cmx boolean.cmx nat.cmx test/booleanT.cmx test/natT.cmx test/parserT.cmx test.cmx -o test.native
++ ocamlfind ocamlopt -linkpkg -package oUnit -package sexplib lambda.cmx boolean.cmx nat.cmx test/booleanT.cmx test/natT.cmx test/parserT.cmx test.cmx -o test.native
+findlib: [WARNING] Interface nat.cmi occurs in several directories: ., /home/delgado/.opam/4.01.0/lib/ocaml
+# Compilation successful.

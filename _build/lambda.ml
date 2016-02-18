@@ -12,7 +12,6 @@ type lambda_term =
   | BoundVar of int 
   | Abs of lambda_term
   | Appl of (lambda_term * lambda_term)
-  | True | False | IfThenElse of lambda_term * lambda_term * lambda_term
 
 (* TODO: remember the name of the abstractions, for pretty-printing *)
 (* TODO: rajouter constructeur des vrais ect... *)
@@ -57,15 +56,6 @@ let rec lambda_term_to_string t =
   | BoundVar v -> string_of_int v        
   | Abs x -> "[]." ^ lambda_term_to_string x 
   | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ ")"
-  | True -> "[].[].1"
-  | False -> "[].[].0"
-  | IfThenElse (x,y,z) -> "[].[].[]." ^ " " ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ " " ^ lambda_term_to_string z 
-
-let () = Printf.printf "%s \n" (lambda_term_to_string(IfThenElse(True,Abs(BoundVar 0),Abs(BoundVar 1))))
-
-(* QUESTION: Ici je ne vois pas comment représenter le True parceque si on considère que c'est un lambda_term a part entiere alors on l'affiche simplement comme ci dessus mais sinon il faut le définir autrement *)
-(* REPONSE PROBABLE: je pense que cela permettrais d'alleger la syntaxe pour construire un lambda_term de type true puisque toujours le meme mais au tel cas il faut bien modifier l'ensemble des fonctions pour qu'elles evaluent le true comme une Abs(Abs(BoundVar 1)) *)
-
 
 (** * Reduction *)
 
@@ -76,26 +66,19 @@ let rec substitution t var tsub
     | BoundVar v -> BoundVar v
     | Abs x -> Abs(substitution x (var+1) tsub)
     | Appl (x,y) -> Appl(substitution x var tsub,substitution y var tsub)
-    | True -> substitution (Abs(Abs(BoundVar 1))) var tsub
-    | False -> substitution (Abs(Abs(BoundVar 0))) var tsub
-    | IfThenElse (x,y,z) -> substitution (Abs(Abs(Abs(Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0))))) var tsub
-
 
 
 (* XXX: Unnecessarily complex: it is enough to compare the raw terms *)
 let alpha_equiv terme1 terme2 = 
   lambda_term_to_string terme1 = lambda_term_to_string terme2
 
-let rec reduction t 
+let reduction t 
     = match t with
     | FreeVar v -> FreeVar v
     | BoundVar v -> BoundVar v
     | Abs x -> Abs(x)
     | Appl(Abs(x),y) -> substitution x 0 y
     | Appl(x,y) -> failwith "erreur reduction"
-    | True -> reduction (Abs(Abs(BoundVar 1))) 
-    | False -> reduction (Abs(Abs(BoundVar 0))) 
-    | IfThenElse (x,y,z) -> reduction (Abs(Abs(Abs(Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0))))) 
 
 
 let rec evaluation t 
@@ -107,11 +90,6 @@ let rec evaluation t
     | Appl(BoundVar x,y) -> Appl(BoundVar x,y)
     | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
     | Appl(x,y) -> evaluation(Appl(evaluation x, y))
-    | True -> Abs(Abs(BoundVar 1))
-    | False -> Abs(Abs(BoundVar 0))
-    | IfThenElse (x,y,z) -> evaluation (Appl(Appl(x,y),z))
-
-let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(IfThenElse(True,BoundVar 5,BoundVar 2))))
 
 (* let rec reduction_forte t = 
 match t with 

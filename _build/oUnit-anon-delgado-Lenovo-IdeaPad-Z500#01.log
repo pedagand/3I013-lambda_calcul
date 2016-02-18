@@ -1,0 +1,15 @@
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Start test 0:Parser tests:0:(lambda x x).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Test 0:Parser tests:0:(lambda x x) is successful.
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: End test 0:Parser tests:0:(lambda x x).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Start test 0:Parser tests:2:(x y z).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Test 0:Parser tests:2:(x y z) is successful.
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: End test 0:Parser tests:2:(x y z).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Start test 0:Parser tests:3:(lambda (x y z) (x (y z))).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Test 0:Parser tests:3:(lambda (x y z) (x (y z))) is successful.
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: End test 0:Parser tests:3:(lambda (x y z) (x (y z))).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Start test 0:Parser tests:4:(lambda (x y z) (x y z)).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Test 0:Parser tests:4:(lambda (x y z) (x y z)) is successful.
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: End test 0:Parser tests:4:(lambda (x y z) (x y z)).
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Start test 1:Boolean test:0:ifthenelse.
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: Test 1:Boolean test:0:ifthenelse is successful.
+2016-02-18T10:11:38+00:00 delgado-Lenovo-IdeaPad-Z500#01 I: End test 1:Boolean test:0:ifthenelse.
