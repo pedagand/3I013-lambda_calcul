@@ -7,26 +7,26 @@ open Sexplib
   #require "sexplib";;
  
 *)
-
-type lambda_term =
-  | FreeVar of string 
-  | BoundVar of int 
-  | Abs of lambda_term
-  | Appl of (lambda_term * lambda_term)
-  | True | False | IfThenElse of lambda_term * lambda_term * lambda_term
-(*  | Zero | Suc of lambda_term | Iter of lambda_term * lambda_term * lambda_term *)
-
 type typ = 
 | Bool
 | Nat 
 | Fleche of typ * typ
+
+
+type lambda_term =
+  | FreeVar of (string * typ)
+  | BoundVar of int
+  | Abs of (lambda_term * typ)
+  | Appl of (lambda_term * lambda_term * typ)
+  | True | False | IfThenElse of (lambda_term * lambda_term * lambda_term * typ)
+(*  | Zero | Suc of lambda_term | Iter of lambda_term * lambda_term * lambda_term *)
 
 (* TODO: remember the name of the abstractions, for pretty-printing *)
 (* TODO: rajouter constructeur des vrais ect... *)
 
 (** * A simple parser *)
 
-let rec parse env t 
+(* let rec parse env t 
     = let rec lookup_var env n v
         = match env with
         | [] -> FreeVar v
@@ -51,24 +51,34 @@ let rec parse env t
            (fun x y -> Appl (x, y))
            (parse env f) 
            (List.map (parse env) args)
-      | _ -> failwith "Parser: ill-formed input."
+      | _ -> failwith "Parser: ill-formed input." 
 
-let read t = parse [] (Sexp.of_string t)
+let read t = parse [] (Sexp.of_string t) *)
 
 
 (** * A simple printer *)
 
 (* TODO: print S-expression instead. *)
+let rec type_to_string typ = 
+match typ with
+| Bool -> "Bool"
+| Nat -> "Nat" 
+| Fleche (x,y) -> type_to_string x ^ " -> " ^ type_to_string y
+
 let rec lambda_term_to_string t = 
   match t with
-  | FreeVar v -> v
-  | BoundVar v -> string_of_int v        
-  | Abs x -> "[]." ^ lambda_term_to_string x 
-  | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ ")"
-							    
+  | FreeVar (v,t) -> v
+  | BoundVar v -> string_of_int v
+  | Abs (x,t) -> "([]." ^ lambda_term_to_string x ^" :"  ^ type_to_string t ^ ")"
+  | Appl (x,y,t) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ "):" ^ type_to_string t
+  | True -> "True"
+  | False -> "False"
+  | IfThenElse (x,y,z,t) -> "If " ^ lambda_term_to_string x ^ " Then " ^ lambda_term_to_string y ^ " Else " ^ lambda_term_to_string z ^ ": " ^ type_to_string t
+  
+let () = Printf.printf "%s \n" (lambda_term_to_string(Appl(Abs(BoundVar 0,Bool),True,Bool)))
 
 (** * Reduction *)
-
+(*
 let rec substitution t var tsub 
     = match t with 
     | FreeVar v -> FreeVar v 
@@ -190,6 +200,6 @@ let y = Abs(Abs(Appl(FreeVar "1",Appl(FreeVar "0",BoundVar 0)))) *)
 (*tests pour la fonction reduction_forte *)
 
 
-
+ *)
 
 

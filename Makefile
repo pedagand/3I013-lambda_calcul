@@ -1,7 +1,10 @@
 all : lambda_calcul
 
-lambda_calcul: lambda_calcul.ml
-	ocamlc -o lambda_calcul lambda_calcul.ml
+lambda_calcul: lambda.ml
+	ocamlbuild -use-ocamlfind lambda.native
+
+test.native: test.ml
+	ocamlbuild -use-ocamlfind test.native
 
 clean: 
-	rm lambda_calcul.cmi lambda_calcul.cmo lambda_calcul
+	ocamlbuild -clean
