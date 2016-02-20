@@ -78,14 +78,19 @@ let rec lambda_term_to_string t =
 let () = Printf.printf "%s \n" (lambda_term_to_string(Appl(Abs(BoundVar 0,Bool),True,Bool)))
 
 (** * Reduction *)
-(*
+
 let rec substitution t var tsub 
     = match t with 
     | FreeVar v -> FreeVar v 
     | BoundVar v when v = var -> tsub
     | BoundVar v -> BoundVar v
-    | Abs x -> Abs(substitution x (var+1) tsub)
-    | Appl (x,y) -> Appl(substitution x var tsub,substitution y var tsub)
+    | Abs (x,t) -> Abs(substitution x (var+1) tsub,t)
+    | Appl (x,y,t) -> Appl(substitution x var tsub,substitution y var tsub,t)
+    | True -> True
+    | False -> False
+    | IfThenElse (x,y,z,t) -> IfThenElse (x,y,z,t)
+			       
+
 
 
 (* XXX: Unnecessarily complex: it is enough to compare the raw terms *)
@@ -97,38 +102,61 @@ let reduction t
     | FreeVar v -> FreeVar v
     | BoundVar v -> BoundVar v
     | Abs x -> Abs(x)
-    | Appl(Abs(x),y) -> substitution x 0 y
-    | Appl(x,y) -> failwith "erreur reduction"
+    | Appl(Abs(x,t),y,t2) -> substitution x 0 y
+    | Appl(x,y,t) -> failwith "erreur reduction"
+    | True -> True
+    | False -> False
+    | IfThenElse(x,y,z,t) -> IfThenElse(x,y,z,t)
 
 
-let rec evaluation t 
-    = match t with 
+let rec evaluation terme 
+    = match terme with 
     | FreeVar v -> FreeVar v 
     | BoundVar v -> BoundVar v 
     | Abs x -> Abs x
-    | Appl(Abs(x),y) -> evaluation(reduction t)
-    | Appl(BoundVar x,y) -> Appl(BoundVar x,y)
-    | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
-    | Appl(x,y) -> evaluation(Appl(evaluation x, y))
+    | Appl(Abs(x),y,t) -> evaluation(reduction terme)
+    | Appl(BoundVar x,y,t) -> Appl(BoundVar x,y,t)
+    | Appl(FreeVar x,y,t) -> Appl(FreeVar x,y,t)
+    | Appl(x,y,t) -> evaluation(Appl(evaluation x, y,t))
+    | True -> True
+    | False -> False
+    | IfThenElse (x,y,z,t) when x = True -> y
+    | IfThenElse (x,y,z,t) when x = False -> z
+    | IfThenElse (x,y,z,t) -> reduction((IfThenElse ((reduction x), y, z,t)))
 
-(* let rec reduction_forte t = 
-match t with 
-| FreeVar v -> FreeVar v 
-| BoundVar v -> BoundVar v
-| Abs x -> Abs(reduction_forte x)
-| Appl(Abs(x),y) -> reduction_forte(substitution x 0 y)
-| Appl(x,y) -> (Appl(reduction_forte x, reduction_forte y)) *)
+let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(IfThenElse(True,True,False,Bool))))
+
+(* Fonctions de type checking *)
+(* Le contexte est une liste de tuples de la forme [(var,type)] *)
+
+let rec var_type_in_contexte contexte var t = 
+match contexte with 
+| [] -> failwith "N'est pas dans le contexte Ou type faux " 
+| (x,y)::z -> if x = var && y = t then true else var_type_in_contexte z var t
+
+let contexte = [("x",Bool);("y",Nat);("w",(Fleche(Nat,Bool)))]
+let () = Printf.printf "var_type_in_contexte %b \n" (var_type_in_contexte contexte "x" Bool )
+
+(* Ici on ne demande pas un type a checker ni de contexte puisque l'on sait que c'est le type Bool *)
+let check_bool  term = 
+match term with 
+| True -> true  
+| False -> true 
+| lambda_term -> failwith "Ce n'est pas un booleen erreur" 
+
+let () = Printf.printf "%b \n" (check_bool True) 
+(*
+let b_Abs context term t = 
+match term t with 
+| Abs(x,ty),(a,b) -> if 
+| lambda_term,ty -> failwith "Ce n'est pas une abstraction"
+ *)
 
 
-(* let rec reduction_forte t = 
-match t with
-| FreeVar v -> FreeVar v 
-| BoundVar v -> BoundVar v
-| Abs x -> Abs(reduction_forte x)
-| Appl(BoundVar x,y) -> Appl(BoundVar x, reduction_forte y)
-| Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y)
-| Appl(Abs(x),y) -> reduction_forte(substitution x 0 (reduction_forte y))
-| Appl(x,y) -> reduction_forte(Appl(reduction_forte x ,reduction_forte y)) *)
+
+
+				     
+(*
 
 let rec relie_libre i bv t 
     = match t with 
