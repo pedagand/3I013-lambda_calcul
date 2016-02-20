@@ -7,8 +7,17 @@ let testsucc = Appl(succ,(int_to_lambda_term 0))
 let succ_test = Abs(Abs(Abs(Appl(BoundVar 1,Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0)))))
 let plus_test = Appl(Appl(plus,(int_to_lambda_term 2)),(int_to_lambda_term 2))
 
+let test1 fun ctxt = assert_equal (BoundVar 0) (BoundVar 0);;
+let test2 fun ctxt = assert_equal (FreeVar "y") (FreeVar "y");;
+
+let tests = "test" >:::
+["test 1">:: test1;
+ "test 2">:: test2]
+
 (* XXX: turn those 'printf's into actual tests. Cf. [booleanT] for examples *)
-let tests = ["successeur" >:: fun ctxt -> assert_equal (BoundVar 1) (BoundVar 1)]
+
+(* let tests = ["successeur" >:: fun ctxt -> assert_equal (BoundVar 1) (BoundVar 1);] *)
+
 
 
 
