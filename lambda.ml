@@ -57,9 +57,9 @@ let rec lambda_term_to_string t =
   | BoundVar v -> string_of_int v        
   | Abs x -> "[]." ^ lambda_term_to_string x 
   | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ ")"
-  | True -> "[].[].1"
-  | False -> "[].[].0"
-  | IfThenElse (x,y,z) -> "[].[].[]." ^ " " ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ " " ^ lambda_term_to_string z 
+  | True -> "True"
+  | False -> "False"
+  | IfThenElse (x,y,z) -> "if " ^ lambda_term_to_string x ^ " then " ^ lambda_term_to_string y ^ " else " ^ lambda_term_to_string z 
 
 let () = Printf.printf "%s \n" (lambda_term_to_string(IfThenElse(True,Abs(BoundVar 0),Abs(BoundVar 1))))
 
@@ -76,9 +76,9 @@ let rec substitution t var tsub
     | BoundVar v -> BoundVar v
     | Abs x -> Abs(substitution x (var+1) tsub)
     | Appl (x,y) -> Appl(substitution x var tsub,substitution y var tsub)
-    | True -> substitution (Abs(Abs(BoundVar 1))) var tsub
-    | False -> substitution (Abs(Abs(BoundVar 0))) var tsub
-    | IfThenElse (x,y,z) -> substitution (Abs(Abs(Abs(Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0))))) var tsub
+    | True -> Abs(tsub)
+    | False -> False
+    | IfThenElse (x,y,z) -> Abs(Abs(Appl(Appl(tsub,BoundVar 1),BoundVar 0)))
 
 
 
@@ -93,9 +93,9 @@ let rec reduction t
     | Abs x -> Abs(x)
     | Appl(Abs(x),y) -> substitution x 0 y
     | Appl(x,y) -> failwith "erreur reduction"
-    | True -> reduction (Abs(Abs(BoundVar 1))) 
-    | False -> reduction (Abs(Abs(BoundVar 0))) 
-    | IfThenElse (x,y,z) -> reduction (Abs(Abs(Abs(Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0))))) 
+    | True -> True
+    | False -> False
+    | IfThenElse(x,y,z) -> IfThenElse(x,y,z)
 
 
 let rec evaluation t 
@@ -107,30 +107,14 @@ let rec evaluation t
     | Appl(BoundVar x,y) -> Appl(BoundVar x,y)
     | Appl(FreeVar x,y) -> Appl(FreeVar x,y)
     | Appl(x,y) -> evaluation(Appl(evaluation x, y))
-    | True -> Abs(Abs(BoundVar 1))
-    | False -> Abs(Abs(BoundVar 0))
-    | IfThenElse (x,y,z) -> evaluation (Appl(Appl(x,y),z))
+    | True -> True
+    | False -> False
+    | IfThenElse (x,y,z) when x = True -> y
+    | IfThenElse (x,y,z) when x = False -> z
+    | IfThenElse (x,y,z) -> reduction((IfThenElse ((reduction x), y, z)))
 
 let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(IfThenElse(True,BoundVar 5,BoundVar 2))))
 
-(* let rec reduction_forte t = 
-match t with 
-| FreeVar v -> FreeVar v 
-| BoundVar v -> BoundVar v
-| Abs x -> Abs(reduction_forte x)
-| Appl(Abs(x),y) -> reduction_forte(substitution x 0 y)
-| Appl(x,y) -> (Appl(reduction_forte x, reduction_forte y)) *)
-
-
-(* let rec reduction_forte t = 
-match t with
-| FreeVar v -> FreeVar v 
-| BoundVar v -> BoundVar v
-| Abs x -> Abs(reduction_forte x)
-| Appl(BoundVar x,y) -> Appl(BoundVar x, reduction_forte y)
-| Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y)
-| Appl(Abs(x),y) -> reduction_forte(substitution x 0 (reduction_forte y))
-| Appl(x,y) -> reduction_forte(Appl(reduction_forte x ,reduction_forte y)) *)
 
 let rec relie_libre i bv t 
     = match t with 
@@ -139,6 +123,9 @@ let rec relie_libre i bv t
     | FreeVar v -> FreeVar v
     | Abs(x) -> Abs(relie_libre i (bv + 1) x)
     | Appl(x,y) -> Appl(relie_libre i bv x,relie_libre i bv y)
+    | True -> True
+    | False -> False
+    | IfThenElse(x,y,z) -> IfThenElse(x,y,z)		       
 
 let rec reduction_forte t i 
     = match t with 
@@ -148,6 +135,12 @@ let rec reduction_forte t i
     | Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y i)
     | Appl(Abs(x),y) -> reduction_forte(substitution x 0 y) i
     | Appl(x,y) -> reduction_forte (Appl((reduction x ),y)) i
+    | True -> True
+    | False -> False
+    | IfThenElse (x,y,z) when x = True -> y
+    | IfThenElse (x,y,z) when x = False -> z
+    | IfThenElse (x,y,z) -> reduction((IfThenElse ((reduction x), y, z)))
+
 
 (* | Appl(Abs(x),Appl(y,z)) -> Appl(Abs(x),(Appl(y,z))) *)
 (* | Appl(Abs(x),Appl(y,z)) -> reduction_forte (Appl(Abs(x),(reduction_forte(Appl(y,z)) i))) i *)
