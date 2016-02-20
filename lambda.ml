@@ -16,6 +16,11 @@ type lambda_term =
   | True | False | IfThenElse of lambda_term * lambda_term * lambda_term
 (*  | Zero | Suc of lambda_term | Iter of lambda_term * lambda_term * lambda_term *)
 
+type typ = 
+| Bool
+| Nat 
+| Fleche of typ * typ
+
 (* TODO: remember the name of the abstractions, for pretty-printing *)
 (* TODO: rajouter constructeur des vrais ect... *)
 
@@ -60,6 +65,7 @@ let rec lambda_term_to_string t =
   | BoundVar v -> string_of_int v        
   | Abs x -> "[]." ^ lambda_term_to_string x 
   | Appl (x,y) -> "(" ^ lambda_term_to_string x ^ " " ^ lambda_term_to_string y ^ ")"
+							    
 
 (** * Reduction *)
 
@@ -134,6 +140,35 @@ let rec reduction_forte t i
 (* | Appl(Abs(x),Appl(y,z)) -> Appl(Abs(x),(Appl(y,z))) *)
 (* | Appl(Abs(x),Appl(y,z)) -> reduction_forte (Appl(Abs(x),(reduction_forte(Appl(y,z)) i))) i *)
 	       
+
+(* fonction de check de typage *)
+
+(* le contexte est du type liste de (var,type) *)
+let rec type_var_contexte contexte var = 
+match contexte with
+| [] -> failwith "Contexte vide"
+| (x,y)::[] -> if x = var then y else failwith "Pas dans le context"
+| (x,y)::z ->  if x = var then y else type_var_contexte z var
+
+
+
+
+(* ici pas besoin de donner un type on sait que c'est booleen *)
+let verif_bool contexte terme = 
+if terme = true || terme = false then true else false
+
+(* esque les fonctions ont un effet de bord pour le contexte dans le cas ici présent car j'ai l'impréssion que il faut que celui ci se fasse remplir par les différentes fonctions  *)
+
+let verif_abs contexte terme typ = 
+match typ with 
+| Nat -> failwith "Une abstraction est de type a*a"
+| Bool -> failwith "Une abstraction est de type a*a"
+| Fleche(x,y) -> 
+
+
+
+
+ 
 
 
 
