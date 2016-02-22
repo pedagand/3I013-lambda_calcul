@@ -21,6 +21,7 @@ type lambda_term =
   | True | False | IfThenElse of (lambda_term * lambda_term * lambda_term * typ)
 (*  | Zero | Suc of lambda_term | Iter of lambda_term * lambda_term * lambda_term *)
 
+
 (* TODO: remember the name of the abstractions, for pretty-printing *)
 (* TODO: rajouter constructeur des vrais ect... *)
 
@@ -130,20 +131,53 @@ let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(IfThenElse(True
 (* Le contexte est une liste de tuples de la forme [(var,type)] *)
 
 let rec var_type_in_contexte contexte var t = 
-match contexte with 
-| [] -> failwith "N'est pas dans le contexte Ou type faux " 
-| (x,y)::z -> if x = var && y = t then true else var_type_in_contexte z var t
+  match contexte with 
+  | [] -> failwith "N'est pas dans le contexte Ou type faux " 
+  | (x,y)::z -> if x = var && y = t then true else var_type_in_contexte z var t
 
 let contexte = [("x",Bool);("y",Nat);("w",(Fleche(Nat,Bool)))]
 let () = Printf.printf "var_type_in_contexte %b \n" (var_type_in_contexte contexte "x" Bool )
 
-(* Ici on ne demande pas un type a checker ni de contexte puisque l'on sait que c'est le type Bool *)
-let check_bool  term = 
-match term with 
-| True -> true  
-| False -> true 
-| lambda_term -> failwith "Ce n'est pas un booleen erreur" 
+(*ici le i sert pour garder l'index des variables libérées lors du check de l'abstraction *)
+(* La derniere regle va correspondre a la règle B-syn afin d'executer une synthèse sur le terme *)
 
+(*
+(* Ici on ne demande pas un type a checker ni de contexte puisque l'on sait que c'est le type Bool *)
+let check_bool term t = 
+  match (term,t) with 
+  | (True,Bool) -> true  
+  | (False,Bool) -> true
+  | (lambda_term,typ) -> failwith "Ce n'est pas un booleen erreur"
+		       
+		     
+
+(* ici la variable binder par le lambda devient libre il faut donc trouver un moyen de garder l'info
+dans le contexte sur cette variable *)
+(* on va essayer une méthode en libérant la variable comme dans la reduction forte *)
+let check_abs context term t i =
+  match (term,t) with
+  | (Abs(x,ty),(a,b)) -> check ((string_of_int i,a)::context) (substitution x 0 (FreeVar (string_of_int i))) b (i+1)
+  | lambda_term -> failwith "Ce n'est pas une abstracion erreur ou alors le type n'est pas le bon" 
+
+ *)
+
+(* ici le problème il n'arrive pas a inférer le type de contexte il me semble *) 
+let rec check context term t i =
+  match term with
+  | True -> check_bool term t
+  | False -> check_bool term t
+  | Abs(x,t) -> check_abs context term t i
+  | lambda_term -> failwith "Cas pas encore traite"
+  and check_abs context term t i =
+    match (term,t) with
+    | (Abs(x,ty),(a,b)) -> check ((string_of_int i,a)::context) (substitution x 0 (FreeVar (string_of_int i))) b (i+1)
+    | lambda_term -> failwith "Ce n'est pas une abstracion erreur ou alors le type n'est pas le bon"
+  and check_bool term t = 
+    match (term,t) with 
+    | (True,Bool) -> true  
+    | (False,Bool) -> true
+    | (lambda_term,typ) -> failwith "Ce n'est pas un booleen erreur"
+			    
 let () = Printf.printf "%b \n" (check_bool True) 
 (*
 let b_Abs context term t = 
