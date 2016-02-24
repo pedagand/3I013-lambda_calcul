@@ -8,7 +8,7 @@ type typ =
 
 type inTm = 
   | Abs of string * inTm
-  | INv of exTm
+  | Inv of exTm
 and exTm = 
   | Var of string
   | Appl of exTm * inTm
@@ -20,9 +20,9 @@ match t with
 and inTm_to_string t = 
 match t with 
 | Abs (x,y) -> "[]." ^ x ^ inTm_to_string y
-| INv x -> exTm_to_string x
+| Inv x -> exTm_to_string x
 
-let x = Abs("f",Abs("a",INv(Appl(Var "f",INv(Var "a")))))
+let x = Abs("f",Abs("a",Inv(Appl(Var "f",Inv(Var "a")))))
 
 let () = Printf.printf "%s \n" (inTm_to_string x)
 
@@ -59,15 +59,15 @@ let () = Printf.printf "Fleche %b \n" (is_a_Fleche Bool)
 (* i:inTm et t:typ e:exTm  *)
 let rec check contexte i t = 
 match i with
-| INv(Appl(x,y)) -> check contexte y (typ_gauche_Fleche(synth contexte x)) 
-| INv(Var x) -> if t = (synth contexte (Var x)) then true else false
+| Inv(Appl(x,y)) -> check contexte y (typ_gauche_Fleche(synth contexte x)) 
+| Inv(Var x) -> if t = (synth contexte (Var x)) then true else false
 | Abs(x,y) -> if (is_a_Fleche t) && check ((x,typ_gauche_Fleche t)::contexte) y (typ_droit_Fleche t) then true else false
 and synth contexte e = 
 match e with 
 | Var x -> retourne_type contexte x 
 | Appl(x,y) -> failwith "Cela ne devrait pas arriver"
 
-let x = Abs("f",Abs("g",INv(Appl(Var "f",INv(Var "g")))))
+let x = Abs("f",Abs("g",Inv(Appl(Var "f",Inv(Var "g")))))
 let t = Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))
 let () = Printf.printf "resultat type check %b \n" (check [] x t)
 
