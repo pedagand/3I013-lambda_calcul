@@ -1,4 +1,4 @@
-open Sexplib
+(* open Sexplib *)
 
 
 type typ = 
@@ -6,25 +6,25 @@ type typ =
 | Nat 
 | Fleche of typ * typ
 
-type iN = 
-  | Abs of string * iN
-  | INv of ex
-and ex = 
+type inTm = 
+  | Abs of string * inTm
+  | INv of exTm
+and exTm = 
   | Var of string
-  | Appl of ex * iN
+  | Appl of exTm * inTm
 
-let rec ex_to_string t = 
+let rec exTm_to_string t = 
 match t with
 | Var x -> x 
-| Appl(x,y) -> ex_to_string x ^ " " ^ iN_to_string y
-and iN_to_string t = 
+| Appl(x,y) -> exTm_to_string x ^ " " ^ inTm_to_string y
+and inTm_to_string t = 
 match t with 
-| Abs (x,y) -> "[]." ^ x ^ iN_to_string y
-| INv x -> ex_to_string x
+| Abs (x,y) -> "[]." ^ x ^ inTm_to_string y
+| INv x -> exTm_to_string x
 
 let x = Abs("f",Abs("a",INv(Appl(Var "f",INv(Var "a")))))
 
-let () = Printf.printf "%s \n" (iN_to_string x)
+let () = Printf.printf "%s \n" (inTm_to_string x)
 
 (* Fonctions préliminaires pour le type checking *)
 let rec retourne_type contexte var = 
@@ -56,7 +56,7 @@ let x = Fleche(Bool,Nat)
 let () = Printf.printf "Fleche %b \n" (is_a_Fleche Bool)
 
 
-(* i:iN et t:typ e:ex  *)
+(* i:inTm et t:typ e:exTm  *)
 let rec check contexte i t = 
 match i with
 | INv(Appl(x,y)) -> check contexte y (typ_gauche_Fleche(synth contexte x)) 
