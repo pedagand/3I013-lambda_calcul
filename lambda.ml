@@ -57,6 +57,9 @@ let () = Printf.printf "Fleche %b \n" (is_a_Fleche Bool)
 
 
 (* i:inTm et t:typ e:exTm  *)
+(* XXX: not quite.. :) *)
+
+(*
 let rec check contexte i t = 
 match i with
 | Inv(Appl(x,y)) -> check contexte y (typ_gauche_Fleche(synth contexte x)) 
@@ -66,6 +69,26 @@ and synth contexte e =
 match e with 
 | Var x -> retourne_type contexte x 
 | Appl(x,y) -> failwith "Cela ne devrait pas arriver"
+*)
+
+let rec check contexte inT ty 
+    = match inT with
+    | Abs(_, b) -> failwith "TBD"
+    | Inv(t) -> failwith "TBD"
+and synth contexte exT 
+    = match exT with
+    | Var(x) -> failwith "TBD"
+    | Appl(f, s) -> 
+       let fTy = synth contexte f in
+       begin
+         match fTy with
+         | Fleche(a, b) -> 
+            if check contexte s a then
+              b
+            else 
+              failwith "Argument type invalid"
+         | _ -> failwith "Function type invalid"
+       end
 
 let x = Abs("f",Abs("g",Inv(Appl(Var "f",Inv(Var "g")))))
 let t = Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))
