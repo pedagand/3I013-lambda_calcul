@@ -6,78 +6,56 @@ type typ =
 | Nat 
 | Fleche of typ * typ
 
+(* XXX: Use [FVar] and [BVar], parse terms as [BVar] *)
 type inTm = 
   | Abs of string * inTm
   | Inv of exTm
 and exTm = 
   | Var of string
   | Appl of exTm * inTm
+  | Ann of inTm * typ
+
+(* XXX: Implement alpha-equivalence/equality of [inTm] and [exTm] *)
+(* test: alphaEq (lambda x x) (lambda y y) = true *)
 
 let rec exTm_to_string t = 
 match t with
 | Var x -> x 
 | Appl(x,y) -> exTm_to_string x ^ " " ^ inTm_to_string y
+| _ -> (* XXX: *) failwith "TBD"
 and inTm_to_string t = 
 match t with 
 | Abs (x,y) -> "[]." ^ x ^ inTm_to_string y
 | Inv x -> exTm_to_string x
 
+(* XXX: turn into unit test *)
 let x = Abs("f",Abs("a",Inv(Appl(Var "f",Inv(Var "a")))))
-
 let () = Printf.printf "%s \n" (inTm_to_string x)
 
-(* Fonctions préliminaires pour le type checking *)
-let rec retourne_type contexte var = 
-match contexte with 
-| [] -> failwith "La variable n'est pas dans le contexte"
-| (x,y)::z -> if x = var then y else retourne_type z var
-
-let is_a_Fleche f = 
-  match f with 
-  | Nat -> false 
-  | Bool -> false 
-  | Fleche(x,y) -> true 
-
-(* C'est moche mais je ne sais pas faire autrement  *)
-let typ_gauche_Fleche t =
-match t with 
-| Nat -> failwith "Ce n'est pas une fleche" 
-| Bool -> failwith "Ce n'est pas une fleche"
-| Fleche(x,y) -> x
-
-let typ_droit_Fleche t =
-match t with 
-| Nat -> failwith "Ce n'est pas une fleche" 
-| Bool -> failwith "Ce n'est pas une fleche"
-| Fleche(x,y) -> y
-
-
-let x = Fleche(Bool,Nat)
-let () = Printf.printf "Fleche %b \n" (is_a_Fleche Bool)
-
+(* XXX: re-implement substitution and evaluation *)
 
 (* i:inTm et t:typ e:exTm  *)
-(* XXX: not quite.. :) *)
-
-(*
-let rec check contexte i t = 
-match i with
-| Inv(Appl(x,y)) -> check contexte y (typ_gauche_Fleche(synth contexte x)) 
-| Inv(Var x) -> if t = (synth contexte (Var x)) then true else false
-| Abs(x,y) -> if (is_a_Fleche t) && check ((x,typ_gauche_Fleche t)::contexte) y (typ_droit_Fleche t) then true else false
-and synth contexte e = 
-match e with 
-| Var x -> retourne_type contexte x 
-| Appl(x,y) -> failwith "Cela ne devrait pas arriver"
-*)
-
 let rec check contexte inT ty 
     = match inT with
-    | Abs(_, b) -> failwith "TBD"
-    | Inv(t) -> failwith "TBD"
+    | Abs(x, b) -> 
+       begin
+         match ty with
+         | Fleche(s, t) -> 
+            (* XXX: open the de Bruijn binder *)
+            check ((x, s) :: contexte) b t
+         | _ -> failwith "Abstraction forced into a non-functional type"
+       end
+    | Inv(t) -> 
+       let tyT = synth contexte t in
+       tyT = ty
 and synth contexte exT 
     = match exT with
-    | Var(x) -> failwith "TBD"
+    | Ann(tm, ty) ->
+       if check contexte tm ty then
+         ty 
+       else
+         failwith "Wrong annotation"
+    | Var(x) -> List.assoc x contexte
     | Appl(f, s) -> 
        let fTy = synth contexte f in
        begin
@@ -90,7 +68,14 @@ and synth contexte exT
          | _ -> failwith "Function type invalid"
        end
 
+(* XXX: turn into unit tests *)
+(* [https://en.wikipedia.org/wiki/B,_C,_K,_W_system] *)
 let x = Abs("f",Abs("g",Inv(Appl(Var "f",Inv(Var "g")))))
 let t = Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))
-let () = Printf.printf "resultat type check %b \n" (check [] x t)
+let y = Abs("f",Abs("g",Inv(Appl(Var "g",Inv(Var "f")))))
+let u = Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))
+
+let () = 
+  Printf.printf "resultat type check %b \n" (check [] x t);
+  Printf.printf "resultat type check %b \n" (check [] y u);
 
