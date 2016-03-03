@@ -90,11 +90,59 @@ and substitution_exTm  t tsub var =
   | Ifte(x,y,z) -> Ifte(x,y,z)
 
 
+let rec substitution t var tsub 
+    = match t with 
+    | SFVar v -> SFVar v 
+    | SBVar v when v = var -> tsub
+    | SBVar v -> SBVar v
+    | SAbs x -> SAbs(substitution x (var+1) tsub)
+    | SAppl (x,y) -> SAppl(substitution x var tsub,substitution y var tsub)
+    | STrue -> SAbs(tsub)
+    | SFalse -> SFalse
+    | SIfte (x,y,z) -> SIfte (x,y,z)
+
+let rec relie_libre i bv t =
+  match t with 
+  | SBVar v -> SBVar v
+  | SFVar  v when v = string_of_int i -> SBVar bv
+  | SFVar  v -> SFVar  v
+  | SAbs(x) -> SAbs(relie_libre i (bv + 1) x)
+  | SAppl(x,y) -> SAppl(relie_libre i bv x,relie_libre i bv y)
+  | STrue-> STrue
+  | SFalse -> SFalse
+  | SIfte(x,y,z) -> SIfte(x,y,z)
+				   
+let rec reduction_forte t i  = 
+  match t with 
+    | SFVar  v -> SFVar  v
+    | SBVar v -> SBVar v
+    | SAbs x -> SAbs(relie_libre i 0 (reduction_forte (substitution x 0 (SFVar  (string_of_int i))) (i+1)))
+    | SAppl(SAbs(x),y) -> reduction_forte(substitution x 0 y) i
+    | SAppl(x,y) -> 
+       begin 
+	 match reduction_forte x i with 
+	 | SFVar  z -> SAppl(x,(reduction_forte y i))
+	 | SAbs z -> reduction_forte (SAppl(SAbs(z),y)) i 
+	 | neutre -> SAppl(neutre,reduction_forte y i)				   
+       end 
+    | STrue -> STrue
+    | SFalse -> SFalse
+    | SIfte (x,y,z) when x = STrue -> reduction_forte y i
+    | SIfte (x,y,z) when x = SFalse -> reduction_forte z i
+    | SIfte (x,y,z) -> 
+       begin 
+	 match reduction_forte x i with
+	 | STrue-> reduction_forte y i
+	 | SFalse -> reduction_forte z i
+	 | _ -> SIfte(x,y,z)
+       end  
+
+
 let rec typed_to_simple_inTm t = 
   match t with 
     | Abs(x,y) -> SAbs (typed_to_simple_inTm y)
     | Inv(x) -> typed_to_simple_exTm x
-    | True -> STrue 
+    | True-> STrue
     | False -> SFalse
 and typed_to_simple_exTm t = 
   match t with 
@@ -113,7 +161,7 @@ let () = Printf.printf "C'est moche \n \n"
 
 let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
 (* let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (FVar "w") 0) [])
-let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (Ann(Abs("y",Inv(BVar 0)),Fleche(Bool,Bool))) 0) [] ) *)
+let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (Ann(SAbs("y",Inv(BVar 0)),Fleche(Bool,Bool))) 0) [] ) *)
 let () = Printf.printf "C'est moche \n \n" 
 let () = Printf.printf "%s \n" (exTm_to_string y [])  
 let () = Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm y))
@@ -135,7 +183,7 @@ let rec check contexte inT ty
             (* XXX: open the de Bruijn binder *)
             let freshVar = gensym () in
             check ((freshVar, s) :: contexte) (substitution_inTm b (FVar freshVar) 0) t
-         | _ -> failwith "Abstraction forced into a non-functional type"
+         | _ -> failwith "SAbstraction forced into a non-functional type"
        end
     | Inv(t) -> 
        let tyT = synth contexte t in
@@ -185,5 +233,6 @@ let () =
   Printf.printf "resultat type check %b \n" (check [] x t);
   Printf.printf "truc a checker %s \n" (inTm_to_string y []);
   Printf.printf "resultat type check %b \n" (check [] y u);
+  Printf.printf "reduction %s \n" (lambda_term_to_string(reduction_forte (typed_to_simple_inTm y) 0))
 
  
