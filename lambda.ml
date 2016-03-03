@@ -9,11 +9,13 @@ type typ =
 (* XXX: Use [FVar] and [BVar], parse terms as [BVar] *)
 type inTm = 
   | Abs of string * inTm
+  | True | False 
   | Inv of exTm
 and exTm = 
   | FVar of string
   | BVar of int
   | Appl of exTm * inTm
+  | Ifte of inTm * exTm * exTm
   | Ann of inTm * typ
 
 (* XXX: Implement alpha-equivalence/equality of [inTm] and [exTm] *)
