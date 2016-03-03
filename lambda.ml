@@ -63,9 +63,6 @@ let rec lambda_term_to_string t =
 
 let () = Printf.printf "%s \n" (lambda_term_to_string(IfThenElse(True,Abs(BoundVar 0),Abs(BoundVar 1))))
 
-(* QUESTION: Ici je ne vois pas comment représenter le True parceque si on considère que c'est un lambda_term a part entiere alors on l'affiche simplement comme ci dessus mais sinon il faut le définir autrement *)
-(* REPONSE PROBABLE: je pense que cela permettrais d'alleger la syntaxe pour construire un lambda_term de type true puisque toujours le meme mais au tel cas il faut bien modifier l'ensemble des fonctions pour qu'elles evaluent le true comme une Abs(Abs(BoundVar 1)) *)
-
 
 (** * Reduction *)
 
@@ -115,31 +112,43 @@ let rec evaluation t
 
 let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(IfThenElse(True,BoundVar 5,BoundVar 2))))
 
-
-let rec relie_libre i bv t 
-    = match t with 
-    | BoundVar v -> BoundVar v
-    | FreeVar v when v = string_of_int i -> BoundVar bv
-    | FreeVar v -> FreeVar v
-    | Abs(x) -> Abs(relie_libre i (bv + 1) x)
-    | Appl(x,y) -> Appl(relie_libre i bv x,relie_libre i bv y)
-    | True -> True
-    | False -> False
-    | IfThenElse(x,y,z) -> IfThenElse(x,y,z)		       
-
-let rec reduction_forte t i 
-    = match t with 
+(* i:numero de la variable a delié bv:compteur pour la fonction t:lambda_terme *) 		       
+let rec relie_libre i bv t =
+  match t with 
+  | BoundVar v -> BoundVar v
+  | FreeVar v when v = string_of_int i -> BoundVar bv
+  | FreeVar v -> FreeVar v
+  | Abs(x) -> Abs(relie_libre i (bv + 1) x)
+  | Appl(x,y) -> Appl(relie_libre i bv x,relie_libre i bv y)
+  | True -> True
+  | False -> False
+  | IfThenElse(x,y,z) -> IfThenElse(x,y,z)
+				   
+let rec reduction_forte t i  = 
+  match t with 
     | FreeVar v -> FreeVar v
     | BoundVar v -> BoundVar v
     | Abs x -> Abs(relie_libre i 0 (reduction_forte (substitution x 0 (FreeVar (string_of_int i))) (i+1)))
-    | Appl(FreeVar x,y) -> Appl(FreeVar x, reduction_forte y i)
     | Appl(Abs(x),y) -> reduction_forte(substitution x 0 y) i
-    | Appl(x,y) -> reduction_forte (Appl((reduction x ),y)) i
+    | Appl(x,y) -> 
+       begin 
+	 match reduction_forte x i with 
+	 | FreeVar z -> Appl(x,(reduction_forte y i))
+	 | Abs z -> reduction_forte (Appl(Abs(z),y)) i 
+	 | neutre -> Appl(neutre,reduction_forte y i)				   
+       end 
     | True -> True
     | False -> False
-    | IfThenElse (x,y,z) when x = True -> y
-    | IfThenElse (x,y,z) when x = False -> z
-    | IfThenElse (x,y,z) -> reduction((IfThenElse ((reduction x), y, z)))
+    | IfThenElse (x,y,z) when x = True -> reduction_forte y i
+    | IfThenElse (x,y,z) when x = False -> reduction_forte z i
+    | IfThenElse (x,y,z) -> 
+       begin 
+	 match reduction_forte x i with
+	 | True -> reduction_forte y i
+	 | False -> reduction_forte z i
+	 | _ -> IfThenElse(x,y,z)
+       end 
+
 
 
 (* | Appl(Abs(x),Appl(y,z)) -> Appl(Abs(x),(Appl(y,z))) *)
@@ -153,15 +162,13 @@ let rec reduction_forte t i
 
 
 
-						 
-
-
+					      
 (*test pour la fonction relie libre *)
 
-(* let x = Abs(FreeVar "0")
+let x = Abs(Abs(Appl((FreeVar "4"),FreeVar "0")))
 let () = Printf.printf "%s \n" (lambda_term_to_string(x))
-let () = Printf.printf "%s \n" (lambda_term_to_string(relie_libre 0 x))
-let y = Abs(Abs(Appl(FreeVar "1",Appl(FreeVar "0",BoundVar 0)))) *)
+let () = Printf.printf "%s \n" (lambda_term_to_string(Abs(relie_libre 4 0 x)))
+let y = Abs(Abs(Appl(FreeVar "1",Appl(FreeVar "0",BoundVar 0)))) 
 
 (*tests pour la fonction reduction_forte *)
 
