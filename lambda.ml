@@ -10,6 +10,8 @@ type inTm =
   | Abs of string * inTm
   | True | False 
   | Inv of exTm
+  | Zero 
+  | Succ of inTm
 and exTm = 
   | FVar of string
   | BVar of int
@@ -23,6 +25,8 @@ type lambda_term =
   | SAbs of lambda_term
   | SAppl of (lambda_term * lambda_term)
   | STrue | SFalse | SIfte of lambda_term * lambda_term * lambda_term
+  | SZero | SSucc of lambda_term
+      
 
 (* XXX: Implement alpha-equivalence/equality of [inTm] and [exTm] *)
 (* test: alphaEq (lambda x x) (lambda y y) = true *)
@@ -58,6 +62,8 @@ match t with
 | Inv x -> exTm_to_string x l
 | True -> "True"
 | False -> "False"
+| Zero -> "Zero"
+| Succ x -> "Succ(" ^ inTm_to_string x [] ^ ")"
 
 let rec lambda_term_to_string t = 
   match t with
@@ -68,6 +74,8 @@ let rec lambda_term_to_string t =
   | STrue -> "True"
   | SFalse -> "False"
   | SIfte (x,y,z) -> "if " ^ lambda_term_to_string x ^ " then " ^ lambda_term_to_string y ^ " else " ^ lambda_term_to_string z 
+  | SZero -> "Zero"
+  | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
 
 
 (* XXX: turn into unit test *)
@@ -80,6 +88,8 @@ let rec substitution_inTm t tsub var =
   | Abs(x,y) -> Abs(x,(substitution_inTm y tsub (var+1)))
   | True -> True
   | False -> False 
+  | Zero -> Zero
+  | Succ x -> Succ x
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
@@ -100,6 +110,8 @@ let rec substitution t var tsub
     | STrue -> SAbs(tsub)
     | SFalse -> SFalse
     | SIfte (x,y,z) -> SIfte (x,y,z)
+    | SZero -> SZero
+    | SSucc x -> SSucc x
 
 let rec relie_libre i bv t =
   match t with 
@@ -111,6 +123,8 @@ let rec relie_libre i bv t =
   | STrue-> STrue
   | SFalse -> SFalse
   | SIfte(x,y,z) -> SIfte(x,y,z)
+  | SZero -> SZero
+  | SSucc x -> SSucc x
 				   
 let rec reduction_forte t i  = 
   match t with 
@@ -136,14 +150,24 @@ let rec reduction_forte t i  =
 	 | SFalse -> reduction_forte z i
 	 | _ -> SIfte(x,y,z)
        end  
+    | SZero -> SZero
+    | SSucc x -> SSucc x 
 
-
+(* fonction d'iteration d'une fonction n fois *)
+let rec iter n f a = 
+  match n with
+    | Zero -> a
+    | Succ(t) -> iter t f (reduction_forte (SAppl(f,a)) 0)
+    | _ -> failwith "first arg must be a Nat" 
+	       
 let rec typed_to_simple_inTm t = 
   match t with 
     | Abs(x,y) -> SAbs (typed_to_simple_inTm y)
     | Inv(x) -> typed_to_simple_exTm x
     | True-> STrue
     | False -> SFalse
+    | Zero -> SZero
+    | Succ x -> SSucc (typed_to_simple_inTm x)
 and typed_to_simple_exTm t = 
   match t with 
     | BVar x -> SBVar x 
@@ -187,8 +211,13 @@ let rec check contexte inT ty
        end
     | Inv(t) -> 
        let tyT = synth contexte t in
+       begin 
        tyT = ty
-    | True | False -> true
+       end 
+    | True -> if ty = Bool then true else false
+    | False -> if ty = Bool then true else false
+    | Zero -> if ty = Nat then true else false 
+    | Succ x -> if ty = Nat then check contexte x Nat else false
 and synth contexte exT 
     = match exT with
     | Ann(tm, ty) ->
@@ -235,4 +264,16 @@ let () =
   Printf.printf "resultat type check %b \n" (check [] y u);
   Printf.printf "reduction %s \n" (lambda_term_to_string(reduction_forte (typed_to_simple_inTm y) 0))
 
+
+let n = Succ(Succ(Succ(Zero)))
+let () = 
+  Printf.printf "\n test sur les bool \n";
+  Printf.printf "%s \n" (inTm_to_string n []);
+  Printf.printf "resultat type check %b \n" (check [] n Nat)
  
+
+let zero = SAbs(SAbs(SBVar 0))
+let succ = SAbs(SAbs(SAbs(SAppl(SBVar 1,SAppl(SAppl(SBVar 2,SBVar 1),SBVar 0)))))
+let () = Printf.printf "\n test iter \n";
+	 Printf.printf "%s \n" (lambda_term_to_string(zero));
+	 Printf.printf "%s \n" (lambda_term_to_string(iter n succ zero))
