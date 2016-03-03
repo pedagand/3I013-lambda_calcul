@@ -66,6 +66,7 @@ and reduction_exTm t =
     | Appl(x,y) -> Appl(x,y)
     | Ann(x,y) -> Ann(x,y)
 
+
 let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
 let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (FVar "w") 0))
 let() = Printf.printf "%s \n\n" (inTm_to_string(substitution_inTm x (Ann(Abs("y",Inv(BVar 0)),Fleche(Bool,Bool))) 0))
