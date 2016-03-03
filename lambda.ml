@@ -12,6 +12,7 @@ type inTm =
   | Inv of exTm
   | Zero 
   | Succ of inTm
+(* XXX: You've forgotten the iterator for natural numbers *)
 and exTm = 
   | FVar of string
   | BVar of int
@@ -41,6 +42,7 @@ let rec typ_to_string t =
 (* on va faire un truc moche mais pour allez vite en attendant de trouver un truc plus élégant *)
 (* ça passe c'est quand meme assez élégant je trouve *)
 let rec findVar x l = 
+  (* XXX: use [nth] instead of reimpleminting it here *)
   match (x,l) with 
   | (x,[]) -> failwith "Var pas dans la liste" 
   | (0,y::z) -> y 
@@ -107,11 +109,15 @@ let rec substitution t var tsub
     | SBVar v -> SBVar v
     | SAbs x -> SAbs(substitution x (var+1) tsub)
     | SAppl (x,y) -> SAppl(substitution x var tsub,substitution y var tsub)
-    | STrue -> SAbs(tsub)
+    | STrue -> STrue
     | SFalse -> SFalse
-    | SIfte (x,y,z) -> SIfte (x,y,z)
+    | SIfte (x,y,z) -> 
+       (* XXX: the substitution must go through [SIfte] too! *)
+       SIfte (x,y,z)
     | SZero -> SZero
-    | SSucc x -> SSucc x
+    | SSucc x -> 
+       (* XXX: the substitution must go through [SSucc] too! *)
+       SSucc x
 
 let rec relie_libre i bv t =
   match t with 
@@ -122,10 +128,16 @@ let rec relie_libre i bv t =
   | SAppl(x,y) -> SAppl(relie_libre i bv x,relie_libre i bv y)
   | STrue-> STrue
   | SFalse -> SFalse
-  | SIfte(x,y,z) -> SIfte(x,y,z)
+  | SIfte(x,y,z) -> 
+     (* XXX: must go through [SIfte] too! *)
+     SIfte(x,y,z)
   | SZero -> SZero
-  | SSucc x -> SSucc x
-				   
+  | SSucc x -> 
+     (* XXX: must go through [SSucc] too! *)
+     SSucc x
+	
+
+(* XXX: not verified, run (many) tests first *)
 let rec reduction_forte t i  = 
   match t with 
     | SFVar  v -> SFVar  v
@@ -158,7 +170,14 @@ let rec iter n f a =
   match n with
     | Zero -> a
     | Succ(t) -> iter t f (reduction_forte (SAppl(f,a)) 0)
-    | _ -> failwith "first arg must be a Nat" 
+    | _ -> 
+       (* XXX: hehe, careful here: you could be running against 
+           [(lambda x (ifte (S x) not false))]
+          which should reduce to
+           [(lambda x (ifte x not (not false)))]
+          ending with
+           [(lambda x (ifte x not true))] *)
+       failwith "first arg must be a Nat" 
 	       
 let rec typed_to_simple_inTm t = 
   match t with 
