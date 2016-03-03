@@ -25,10 +25,14 @@ let rec typ_to_string t =
   | Nat -> "N"
   | Fleche(x,y) -> typ_to_string x ^ "->" ^ typ_to_string y
 
+(* XXX: resurrect the Lisp parser *)
+(* XXX: pretty print to the Lisp syntax *)
 let rec exTm_to_string t = 
 match t with
 | FVar x -> x 
-| BVar x -> string_of_int x
+| BVar x -> 
+   (* XXX: Lookup the original name from binding [Abs] *)
+   string_of_int x
 | Appl(x,y) -> exTm_to_string x ^ " " ^ inTm_to_string y
 | Ann(x,y) -> inTm_to_string x ^ ":" ^ typ_to_string y
 and inTm_to_string t = 
@@ -49,11 +53,13 @@ let rec substitution_inTm t tsub var =
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
-  | BVar x -> if x = var then tsub else BVar x
+  | BVar x when x = var -> tsub
+  | BVar x -> BVar x
   | Appl(x,y) -> Appl((substitution_exTm x tsub var),(substitution_inTm y tsub var))
   | Ann(x,y) -> Ann((substitution_inTm x tsub var),y)
 
 
+(* XXX: remove annotations / define a datatype of normal forms *)
 let rec reduction_inTm t = 
   match t with 
     | Inv x -> Inv(reduction_exTm x)
@@ -73,36 +79,41 @@ let() = Printf.printf "%s \n\n" (inTm_to_string(substitution_inTm x (Ann(Abs("y"
 let () = Printf.printf "%s \n" (exTm_to_string y)  
 let () = Printf.printf "%s \n" (exTm_to_string(reduction_exTm y))  
 
+let gensym =
+  let c = ref 0 in
+  fun () -> incr c; "x" ^ string_of_int !c
+
 (* i:inTm et t:typ e:exTm  *)
 (* ici le compt doit etre supérieur a toutes les variables liées déja présentes *)
-let rec check contexte inT ty compt
+let rec check contexte inT ty
     = match inT with
     | Abs(x, b) -> 
        begin
          match ty with
          | Fleche(s, t) -> 
             (* XXX: open the de Bruijn binder *)
-            check (((string_of_int compt), s) :: contexte) (substitution_inTm b (FVar(string_of_int compt)) 0) t (compt + 1)
+            let freshVar = gensym () in
+            check ((freshVar, s) :: contexte) (substitution_inTm b (FVar freshVar) 0) t
          | _ -> failwith "Abstraction forced into a non-functional type"
        end
     | Inv(t) -> 
-       let tyT = synth contexte t compt in
+       let tyT = synth contexte t in
        tyT = ty
-and synth contexte exT compt
+and synth contexte exT 
     = match exT with
     | Ann(tm, ty) ->
-       if check contexte tm ty compt then
+       if check contexte tm ty then
          ty 
        else
          failwith "Wrong annotation"
     | FVar(x) -> List.assoc x contexte
     | BVar x -> failwith "Bvar is not possible at this moment"
     | Appl(f, s) -> 
-       let fTy = synth contexte f compt in
+       let fTy = synth contexte f in
        begin
          match fTy with
          | Fleche(a, b) -> 
-            if check contexte s a compt then
+            if check contexte s a then
               b
             else 
               failwith "Argument type invalid"
@@ -118,7 +129,7 @@ let u = Fleche(Bool,Bool)
 
 let () = 
   Printf.printf "truc a checker %s \n" (inTm_to_string x);
-  Printf.printf "resultat type check %b \n" (check [] x t 2);
+  Printf.printf "resultat type check %b \n" (check [] x t);
   Printf.printf "truc a checker %s \n" (inTm_to_string y);
-  Printf.printf "resultat type check %b \n" (check [] y u 2);
+  Printf.printf "resultat type check %b \n" (check [] y u);
 
