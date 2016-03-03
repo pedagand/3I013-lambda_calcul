@@ -109,13 +109,16 @@ let () = Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm x));
 	 Printf.printf "%s \n" (inTm_to_string y []);
 	 Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm y))
 
-(*
+let () = Printf.printf "C'est moche \n \n" 
+
 let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
-let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (FVar "w") 0))
-let() = Printf.printf "%s \n\n" (inTm_to_string(substitution_inTm x (Ann(Abs("y",Inv(BVar 0)),Fleche(Bool,Bool))) 0))
-let () = Printf.printf "%s \n" (exTm_to_string y)  
-let () = Printf.printf "%s \n" (exTm_to_string(reduction_exTm y))  
- *)
+(* let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (FVar "w") 0) [])
+let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (Ann(Abs("y",Inv(BVar 0)),Fleche(Bool,Bool))) 0) [] ) *)
+let () = Printf.printf "C'est moche \n \n" 
+let () = Printf.printf "%s \n" (exTm_to_string y [])  
+let () = Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm y))
+  
+
 let gensym =
   let c = ref 0 in
   fun () -> incr c; "x" ^ string_of_int !c
