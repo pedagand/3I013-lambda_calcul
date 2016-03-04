@@ -39,22 +39,13 @@ let rec typ_to_string t =
   | Fleche(x,y) -> typ_to_string x ^ "->" ^ typ_to_string y
 
 
-(* on va faire un truc moche mais pour allez vite en attendant de trouver un truc plus élégant *)
-(* ça passe c'est quand meme assez élégant je trouve *)
-let rec findVar x l = 
-  (* XXX: use [nth] instead of reimpleminting it here *)
-  match (x,l) with 
-  | (x,[]) -> failwith "Var pas dans la liste" 
-  | (0,y::z) -> y 
-  | (x,y::z) -> findVar (x-1) z
-
 (* XXX: resurrect the Lisp parser *)
 (* XXX: pretty print to the Lisp syntax *)
 (* t un terme et l une liste de nom de variable générer avec les binder *)
 let rec exTm_to_string t l = 
 match t with
 | FVar x -> x 
-| BVar x -> findVar x l	      
+| BVar x -> List.nth l x	      
 | Appl(x,y) -> exTm_to_string x l ^ " " ^ inTm_to_string y l 
 | Ann(x,y) -> inTm_to_string x l ^ ":" ^ typ_to_string y
 | Ifte(x,y,z) -> "if " ^ inTm_to_string x l ^ " then " ^ exTm_to_string y l ^ " else " ^ exTm_to_string z l
@@ -91,7 +82,7 @@ let rec substitution_inTm t tsub var =
   | True -> True
   | False -> False 
   | Zero -> Zero
-  | Succ x -> Succ x
+  | Succ x -> Succ(substitution_inTm x tsub var)
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
@@ -99,7 +90,7 @@ and substitution_exTm  t tsub var =
   | BVar x -> BVar x
   | Appl(x,y) -> Appl((substitution_exTm x tsub var),(substitution_inTm y tsub var))
   | Ann(x,y) -> Ann((substitution_inTm x tsub var),y)
-  | Ifte(x,y,z) -> Ifte(x,y,z)
+  | Ifte(x,y,z) -> Ifte((substitution_inTm x tsub var),(substitution_exTm y tsub var),(substitution_exTm z tsub var))
 
 
 let rec substitution t var tsub 
@@ -111,13 +102,9 @@ let rec substitution t var tsub
     | SAppl (x,y) -> SAppl(substitution x var tsub,substitution y var tsub)
     | STrue -> STrue
     | SFalse -> SFalse
-    | SIfte (x,y,z) -> 
-       (* XXX: the substitution must go through [SIfte] too! *)
-       SIfte (x,y,z)
+    | SIfte (x,y,z) -> SIfte((substitution x var tsub),(substitution y var tsub),(substitution z var tsub))
     | SZero -> SZero
-    | SSucc x -> 
-       (* XXX: the substitution must go through [SSucc] too! *)
-       SSucc x
+    | SSucc x -> SSucc(substitution x var tsub)
 
 let rec relie_libre i bv t =
   match t with 
@@ -128,14 +115,33 @@ let rec relie_libre i bv t =
   | SAppl(x,y) -> SAppl(relie_libre i bv x,relie_libre i bv y)
   | STrue-> STrue
   | SFalse -> SFalse
-  | SIfte(x,y,z) -> 
-     (* XXX: must go through [SIfte] too! *)
-     SIfte(x,y,z)
+  | SIfte(x,y,z) -> SIfte((relie_libre i bv x),(relie_libre i bv y),(relie_libre i bv z))
   | SZero -> SZero
-  | SSucc x -> 
-     (* XXX: must go through [SSucc] too! *)
-     SSucc x
-	
+  | SSucc x -> SSucc(relie_libre i bv x)
+
+let rec relie_libre_inTm i bv t = 
+  match t with 
+  | Abs(x,y) -> Abs(x,(relie_libre_inTm i (bv + 1) y))
+  | Inv(x) -> Inv(relie_libre_exTm i bv x)
+  | True -> True
+  | False -> False 
+  | Zero -> Zero 
+  | Succ(x) -> Succ(relie_libre_inTm i bv x)
+and relie_libre_exTm  i bv t = 
+  match t with 
+  | BVar v -> BVar v 
+  | FVar v when v = string_of_int i -> BVar bv
+  | FVar v -> FVar v 
+  | Appl(x,y) -> Appl((relie_libre_exTm i bv x),(relie_libre_inTm i bv y))
+  | Ifte(x,y,z) -> Ifte((relie_libre_inTm i bv x),(relie_libre_exTm i bv y),(relie_libre_exTm i bv z))
+  | Ann(x,y) -> Ann((relie_libre_inTm i bv x),y)
+
+
+let x = Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))
+let () = Printf.printf "\n Test de la fonction relie_libre_inTm \n";
+	 Printf.printf "x =  %s \n" (inTm_to_string x []);
+	 Printf.printf "Abs(x) = %s \n" (inTm_to_string (Abs("y",(relie_libre_inTm 0 0 x))) []);
+	 Printf.printf "Fin test relie_libre_inTm \n"
 
 (* XXX: not verified, run (many) tests first *)
 let rec reduction_forte t i  = 
@@ -149,7 +155,7 @@ let rec reduction_forte t i  =
 	 match reduction_forte x i with 
 	 | SFVar  z -> SAppl(x,(reduction_forte y i))
 	 | SAbs z -> reduction_forte (SAppl(SAbs(z),y)) i 
-	 | neutre -> SAppl(neutre,reduction_forte y i)				   
+	 | autre -> SAppl(autre,reduction_forte y i)			        
        end 
     | STrue -> STrue
     | SFalse -> SFalse
@@ -164,6 +170,47 @@ let rec reduction_forte t i  =
        end  
     | SZero -> SZero
     | SSucc x -> SSucc x 
+(* la fonction exTm doit retourner un inTm d'après le papier "tuto"  C'est pour ça que je pense que cela va etre tricky de comparer nos 
+termes*)
+(* i=0 toujours au debut de la fonction, permet de relier les variables *)
+let rec big_step_eval_inTm t i= 
+  match t with
+    | Abs(x,y) -> Abs(x,(relie_libre_inTm i 0 (big_step_eval_inTm (substitution_inTm y (FVar(string_of_int i)) 0) (i+1))))
+    | Inv(x) -> big_step_eval_exTm x i
+    | True -> True
+    | False -> False 
+    | Zero -> Zero
+    | Succ x -> Succ x 
+(* Pour l'instant je test avec des annotation bidon *)
+(* Pour l'instant c'est vraiment le truc le plus moche *)
+and big_step_eval_exTm t i=
+  match t with 
+  | FVar x -> Inv(FVar x)
+  | BVar x -> Inv(BVar x)
+  | Appl(Ann(Abs(x,y),t),z) -> big_step_eval_inTm (substitution_inTm y (Ann(z,Bool)) 0) i
+  | Appl(x,y) -> 
+     begin
+       match big_step_eval_exTm x i with 
+       | Abs(z,w) -> big_step_eval_exTm (Appl(Ann((Abs(z,w)),Bool),y)) i 
+       | Inv(FVar z) -> Inv(Appl((FVar z),(big_step_eval_inTm y i)))
+       | Inv(reste) -> Inv(Appl(reste,big_step_eval_inTm y i))
+       | reste -> Inv((Appl((Ann(reste,Bool)),(big_step_eval_inTm y i))))
+     end 
+  | Ann(x,y) -> big_step_eval_inTm x i
+  | Ifte(x,y,z) -> Inv(Ifte((big_step_eval_inTm x i),(Ann((big_step_eval_exTm y i),Bool)),(Ann((big_step_eval_exTm z i),Bool))))
+
+let x = Abs("f",Abs("g",Inv(Appl(BVar 1,Inv(BVar 0)))))       
+let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
+let () = Printf.printf "\n test sur la big_step_eval \n";
+	 Printf.printf "%s \n" (inTm_to_string (Inv(y)) []);
+	 Printf.printf "%s \n" (inTm_to_string (big_step_eval_exTm y 0) []);
+	 Printf.printf "Fin test big_step_eval \n"
+		       
+    
+       
+
+
+
 
 (* fonction d'iteration d'une fonction n fois *)
 let rec iter n f a = 
