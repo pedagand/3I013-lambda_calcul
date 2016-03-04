@@ -12,6 +12,7 @@ type inTm =
   | Inv of exTm
   | Zero 
   | Succ of inTm
+(* Iter of inTm * inTm * inTm *)
 (* XXX: You've forgotten the iterator for natural numbers *)
 and exTm = 
   | FVar of string
@@ -27,7 +28,21 @@ type lambda_term =
   | SAppl of (lambda_term * lambda_term)
   | STrue | SFalse | SIfte of lambda_term * lambda_term * lambda_term
   | SZero | SSucc of lambda_term
-      
+
+(* test de l'implémentation du papier "tutorial" *)
+type value = 
+  | VLam of (value -> value)
+  | VNeutral of neutral 
+and neutral = 
+  | NFree of string 
+  | NApp of neutral * value 
+and env = Env of value list
+
+(* Le commentaire suivant représente ce qui perdra l'humanité *)
+(*let test = VLam(function x -> match x with 
+			      | VNeutral(NFree x) -> VNeutral(NFree(x ^ x)))
+match test with VLam x -> x (VNeutral(NFree "x"))*)
+  
 
 (* XXX: Implement alpha-equivalence/equality of [inTm] and [exTm] *)
 (* test: alphaEq (lambda x x) (lambda y y) = true *)
@@ -173,7 +188,7 @@ let rec reduction_forte t i  =
 (* la fonction exTm doit retourner un inTm d'après le papier "tuto"  C'est pour ça que je pense que cela va etre tricky de comparer nos 
 termes*)
 (* i=0 toujours au debut de la fonction, permet de relier les variables *)
-let rec big_step_eval_inTm t i= 
+(* let rec big_step_eval_inTm t i= 
   match t with
     | Abs(x,y) -> Abs(x,(relie_libre_inTm i 0 (big_step_eval_inTm (substitution_inTm y (FVar(string_of_int i)) 0) (i+1))))
     | Inv(x) -> big_step_eval_exTm x i
@@ -197,15 +212,44 @@ and big_step_eval_exTm t i=
        | reste -> Inv((Appl((Ann(reste,Bool)),(big_step_eval_inTm y i))))
      end 
   | Ann(x,y) -> big_step_eval_inTm x i
-  | Ifte(x,y,z) -> Inv(Ifte((big_step_eval_inTm x i),(Ann((big_step_eval_exTm y i),Bool)),(Ann((big_step_eval_exTm z i),Bool))))
+  | Ifte(x,y,z) -> Inv(Ifte((big_step_eval_inTm x i),(Ann((big_step_eval_exTm y i),Bool)),(Ann((big_step_eval_exTm z i),Bool)))) *)
 
+(*
 let x = Abs("f",Abs("g",Inv(Appl(BVar 1,Inv(BVar 0)))))       
 let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
 let () = Printf.printf "\n test sur la big_step_eval \n";
 	 Printf.printf "%s \n" (inTm_to_string (Inv(y)) []);
 	 Printf.printf "%s \n" (inTm_to_string (big_step_eval_exTm y 0) []);
 	 Printf.printf "Fin test big_step_eval \n"
-		       
+
+	 *)
+let vfree name = VNeutral(NFree name)
+
+let gensym2 =
+  let c = ref 0 in
+  fun () -> incr c; "x" ^ string_of_int !c
+  
+
+let rec big_step_eval_exTm t envi = 
+  match t with
+    | Ann(x,_) -> big_step_eval_inTm x envi
+    | FVar v -> vfree v 
+    | BVar v -> List.nth envi v
+    | Appl(x,y) -> vapp((big_step_eval_exTm x envi),(big_step_eval_inTm y envi))
+    | _ -> failwith "On commence déja par ça et après on vera"
+and vapp v = 
+  match v with 
+  | ((VLam f),v) -> f v
+  | ((VNeutral n),v) -> VNeutral(NApp(n,v))
+and big_step_eval_inTm t envi = 
+  match t with 
+  | Inv(i) -> big_step_eval_exTm i envi
+  | Abs(x,y) -> let freshV = gensym2 () in		
+		(VLam(function freshV -> (big_step_eval_inTm y (freshV::envi))))
+		 
+  | _ -> failwith "On commence déja par ça et après on vera"
+		
+  
     
        
 
