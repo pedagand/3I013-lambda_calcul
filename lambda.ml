@@ -85,6 +85,9 @@ let rec lambda_term_to_string t =
   | SZero -> "Zero"
   | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
 
+
+(* XXX: look at [quote], Fig.7, p.11. Think very hard about the
+   argument of [VLam], this is very important. *)
 let rec value_to_string v = 
   match v with 
   | VLam(x) -> failwith "Je n'arrive pas a matcher le type ->"
@@ -94,6 +97,8 @@ and neutral_to_string n =
   | NFree x -> x 
   | NApp (x,y) -> (neutral_to_string x) ^ " " ^ (value_to_string y)
 
+(* XXX: on the model of the above function, implement a function
+   taking a [value]/[neutral] to [lambda_term] *)
 
 (* XXX: turn into unit test *)
 let x = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
@@ -196,6 +201,9 @@ let rec reduction_forte t i  =
     | SSucc x -> SSucc x 
 (* la fonction exTm doit retourner un inTm d'après le papier "tuto"  C'est pour ça que je pense que cela va etre tricky de comparer nos 
 termes*)
+(* Cf. remarque au-dessus : à partir d'une [value], on peut aisément
+   reconstruire un [lambda_terme] et donc comparer des choses égales *)
+
 (* i=0 toujours au debut de la fonction, permet de relier les variables *)
 (* let rec big_step_eval_inTm t i= 
   match t with
@@ -253,9 +261,7 @@ and vapp v =
 and big_step_eval_inTm t envi = 
   match t with 
   | Inv(i) -> big_step_eval_exTm i envi
-  | Abs(x,y) -> let freshV = gensym2 () in		
-		(VLam(function freshV -> (big_step_eval_inTm y (freshV::envi))))
-		 
+  | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | _ -> failwith "On commence déja par ça et après on vera"
 		
 let () = Printf.printf "\n test de value_to_string \n";
