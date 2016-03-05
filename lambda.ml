@@ -85,6 +85,15 @@ let rec lambda_term_to_string t =
   | SZero -> "Zero"
   | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
 
+let rec value_to_string v = 
+  match v with 
+  | VLam(x) -> failwith "Je n'arrive pas a matcher le type ->"
+  | VNeutral n-> neutral_to_string n
+and neutral_to_string n =
+  match n with
+  | NFree x -> x 
+  | NApp (x,y) -> (neutral_to_string x) ^ " " ^ (value_to_string y)
+
 
 (* XXX: turn into unit test *)
 let x = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
@@ -249,7 +258,11 @@ and big_step_eval_inTm t envi =
 		 
   | _ -> failwith "On commence déja par ça et après on vera"
 		
-  
+let () = Printf.printf "\n test de value_to_string \n";
+	 Printf.printf "%s \n" (inTm_to_string x []);
+	 Printf.printf "%s \n" (value_to_string(big_step_eval_inTm x []))
+
+let () = Printf.printf " \n test de big_step_eval \n"
     
        
 
