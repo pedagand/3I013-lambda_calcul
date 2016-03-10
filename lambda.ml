@@ -6,6 +6,9 @@ type typ =
 | Nat 
 | Fleche of typ * typ
 
+(* Correspondance avec le papier 
+Abs = Lam
+Inf = Inv *)
 type inTm = 
   | Abs of string * inTm
   | True | False 
@@ -88,14 +91,27 @@ let rec lambda_term_to_string t =
 
 (* XXX: look at [quote], Fig.7, p.11. Think very hard about the
    argument of [VLam], this is very important. *)
-let rec value_to_string v = 
+(* let rec value_to_string v = 
   match v with 
-  | VLam(x) -> failwith "Je n'arrive pas a matcher le type ->"
+  | VLam(x) -> (function x -> 
   | VNeutral n-> neutral_to_string n
 and neutral_to_string n =
   match n with
   | NFree x -> x 
-  | NApp (x,y) -> (neutral_to_string x) ^ " " ^ (value_to_string y)
+  | NApp (x,y) -> (neutral_to_string x) ^ " " ^ (value_to_string y) *)
+
+let vfree name = VNeutral(NFree name)
+(* let boundfree i x = *)
+
+(*
+let rec value_to_inTm i v =
+  match v with 
+  | VLam(f) -> Abs((string_of_int(i)),(value_to_inTm (i+1) (f(vfree(string_of_int i)))))
+  | VNeutral(x) -> Inv(neutral_to_exTm i x)
+and neutral_to_exTm i v = 
+  match v with 
+  | NFree x -> BVar 
+	       *)
 
 (* XXX: on the model of the above function, implement a function
    taking a [value]/[neutral] to [lambda_term] *)
@@ -240,7 +256,6 @@ let () = Printf.printf "\n test sur la big_step_eval \n";
 	 Printf.printf "Fin test big_step_eval \n"
 
 	 *)
-let vfree name = VNeutral(NFree name)
 
 let gensym2 =
   let c = ref 0 in
@@ -264,9 +279,9 @@ and big_step_eval_inTm t envi =
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | _ -> failwith "On commence déja par ça et après on vera"
 		
-let () = Printf.printf "\n test de value_to_string \n";
+(* let () = Printf.printf "\n test de value_to_string \n";
 	 Printf.printf "%s \n" (inTm_to_string x []);
-	 Printf.printf "%s \n" (value_to_string(big_step_eval_inTm x []))
+	 Printf.printf "%s \n" (value_to_string(big_step_eval_inTm x [])) *)
 
 let () = Printf.printf " \n test de big_step_eval \n"
     
