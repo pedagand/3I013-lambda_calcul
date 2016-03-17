@@ -62,18 +62,10 @@ let rec typ_to_string t =
 
 (* XXX: resurrect the Lisp parser *)
 
-let rec parse_term env t 
-    = let rec lookup_var env n v
-        = match env with
-        | [] -> FVar v
-        | w :: env when v = w -> BVar n
-        | _ :: env -> lookup_var env (n+1) v 
-      in
-      match t with 
-      | Sexp.List [Sexp.List x ; Sexp.Atom ":" ; Sexp.List t] -> 
-	 Inv(Ann((parse env x),(parse_type [] env t)))
+let rec parse_term env t = 
+      match t with   
       | Sexp.List [Sexp.Atom "lambda"; Sexp.Atom var; body] -> 
-	 Abs(var,(parse (var::env) body)) 
+	 Abs(var,(parse_term (var::env) body)) 
       | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars ; body] -> 
 	 let vars = List.map (function 
 			       | Sexp.Atom v -> v
@@ -82,21 +74,36 @@ let rec parse_term env t
 	 List.fold_right 
            (fun var b -> Abs(var,b))
            vars
-           (parse (List.append (List.rev vars) env) body)
-      | Sexp.Atom v -> Inv(lookup_var env 0 v )
-      | Sexp.List (f::args) -> 
-	 List.fold_left 
-           (fun x y -> Inv(Appl (x, y)))
-           (parse env f) 
-           (List.map (parse env) args)
-      | _ -> failwith "Parser: ill-formed input."
-and parse_type env t = 
+           (parse_term (List.append (List.rev vars) env) body)      
+      | _ -> Inv(parse_exTm env t)
+and parse_exTm env t = 
+  let rec lookup_var env n v
+    = match env with
+    | [] -> FVar v
+        | w :: env when v = w -> BVar n
+        | _ :: env -> lookup_var env (n+1) v 
+  in
   match t with 
-  | Sexp.List (t:: 
- 
-  
-		  
-	
+  | Sexp.List [x ; Sexp.Atom ":" ; t] -> 
+     Ann((parse_term env x),(parse_type [] t))
+  | Sexp.Atom v -> lookup_var env 0 v 
+  | Sexp.List (f::args) -> 
+     List.fold_left 
+       (fun x y -> Appl(x, y))
+       (parse_exTm env f)
+       (List.map (parse_term env) args)
+  | _ -> failwith "erreur de parsing" 
+and  parse_type env t = 
+  match t with 
+  | Sexp.Atom "B" -> Bool
+  | Sexp.Atom "N" -> Nat 
+  | Sexp.List [x ;y] ->
+     Fleche((parse_type [] x),(parse_type [] y)) 
+  | _ -> failwith "erreur dans le parsing" 
+
+
+let read t = parse_term [] (Sexp.of_string t)
+					     		 	
 
 (* XXX: pretty print to the Lisp syntax *)
 (* t un terme et l une liste de nom de variable générer avec les binder *)
@@ -115,6 +122,25 @@ match t with
 | False -> "False"
 | Zero -> "Zero"
 | Succ x -> "Succ(" ^ inTm_to_string x [] ^ ")"
+
+(* test pour le parsing ici *)
+let x = "(B : N)"
+let y = "(lambda (f x) (x))"
+let w = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
+let wi = "(lambda (f a) (f a))"
+let yi = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))
+let yiw = "(((lambda (x) (x)) : ((B B) (B B))) (lambda (y) (y)))"
+let () = Printf.printf "\n test de parsing \n";
+	 Printf.printf "%s\n" x;
+	 Printf.printf "%s\n" (inTm_to_string (read x) []);
+	 Printf.printf "%s \n" y;
+	 Printf.printf "%s \n" (inTm_to_string (read y) []);
+	 Printf.printf "%s \n" (inTm_to_string w []);
+	 Printf.printf "%s \n" (inTm_to_string (read wi) []);
+	 Printf.printf "%s \n" (inTm_to_string yi []);
+	 Printf.printf "%s \n" (inTm_to_string (read yiw) []);
+	 Printf.printf "\n\n"
+
 
 let rec lambda_term_to_string t = 
   match t with
