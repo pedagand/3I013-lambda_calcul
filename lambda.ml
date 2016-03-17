@@ -89,29 +89,21 @@ let rec lambda_term_to_string t =
   | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
 
 
-(* XXX: look at [quote], Fig.7, p.11. Think very hard about the
-   argument of [VLam], this is very important. *)
-(* let rec value_to_string v = 
-  match v with 
-  | VLam(x) -> (function x -> 
-  | VNeutral n-> neutral_to_string n
-and neutral_to_string n =
-  match n with
-  | NFree x -> x 
-  | NApp (x,y) -> (neutral_to_string x) ^ " " ^ (value_to_string y) *)
-
 let vfree name = VNeutral(NFree name)
 (* let boundfree i x = *)
 
-(*
+
 let rec value_to_inTm i v =
   match v with 
-  | VLam(f) -> Abs((string_of_int(i)),(value_to_inTm (i+1) (f(vfree(string_of_int i)))))
+  | VLam(f) -> Abs((string_of_int(i)),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
   | VNeutral(x) -> Inv(neutral_to_exTm i x)
 and neutral_to_exTm i v = 
   match v with 
-  | NFree x -> BVar 
-	       *)
+  | NFree x -> let k = int_of_string x in
+	       if k <= 0 then BVar(i + k - 1)
+	       else FVar x
+  | NApp(n,x) -> Appl((neutral_to_exTm i n),(value_to_inTm i x))
+
 
 (* XXX: on the model of the above function, implement a function
    taking a [value]/[neutral] to [lambda_term] *)
@@ -215,47 +207,6 @@ let rec reduction_forte t i  =
        end  
     | SZero -> SZero
     | SSucc x -> SSucc x 
-(* la fonction exTm doit retourner un inTm d'après le papier "tuto"  C'est pour ça que je pense que cela va etre tricky de comparer nos 
-termes*)
-(* Cf. remarque au-dessus : à partir d'une [value], on peut aisément
-   reconstruire un [lambda_terme] et donc comparer des choses égales *)
-
-(* i=0 toujours au debut de la fonction, permet de relier les variables *)
-(* let rec big_step_eval_inTm t i= 
-  match t with
-    | Abs(x,y) -> Abs(x,(relie_libre_inTm i 0 (big_step_eval_inTm (substitution_inTm y (FVar(string_of_int i)) 0) (i+1))))
-    | Inv(x) -> big_step_eval_exTm x i
-    | True -> True
-    | False -> False 
-    | Zero -> Zero
-    | Succ x -> Succ x 
-(* Pour l'instant je test avec des annotation bidon *)
-(* Pour l'instant c'est vraiment le truc le plus moche *)
-and big_step_eval_exTm t i=
-  match t with 
-  | FVar x -> Inv(FVar x)
-  | BVar x -> Inv(BVar x)
-  | Appl(Ann(Abs(x,y),t),z) -> big_step_eval_inTm (substitution_inTm y (Ann(z,Bool)) 0) i
-  | Appl(x,y) -> 
-     begin
-       match big_step_eval_exTm x i with 
-       | Abs(z,w) -> big_step_eval_exTm (Appl(Ann((Abs(z,w)),Bool),y)) i 
-       | Inv(FVar z) -> Inv(Appl((FVar z),(big_step_eval_inTm y i)))
-       | Inv(reste) -> Inv(Appl(reste,big_step_eval_inTm y i))
-       | reste -> Inv((Appl((Ann(reste,Bool)),(big_step_eval_inTm y i))))
-     end 
-  | Ann(x,y) -> big_step_eval_inTm x i
-  | Ifte(x,y,z) -> Inv(Ifte((big_step_eval_inTm x i),(Ann((big_step_eval_exTm y i),Bool)),(Ann((big_step_eval_exTm z i),Bool)))) *)
-
-(*
-let x = Abs("f",Abs("g",Inv(Appl(BVar 1,Inv(BVar 0)))))       
-let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
-let () = Printf.printf "\n test sur la big_step_eval \n";
-	 Printf.printf "%s \n" (inTm_to_string (Inv(y)) []);
-	 Printf.printf "%s \n" (inTm_to_string (big_step_eval_exTm y 0) []);
-	 Printf.printf "Fin test big_step_eval \n"
-
-	 *)
 
 let gensym2 =
   let c = ref 0 in
@@ -303,6 +254,7 @@ let rec iter n f a =
           ending with
            [(lambda x (ifte x not true))] *)
        failwith "first arg must be a Nat" 
+
 	       
 let rec typed_to_simple_inTm t = 
   match t with 
@@ -406,7 +358,8 @@ let () =
   Printf.printf "resultat type check %b \n" (check [] x t);
   Printf.printf "truc a checker %s \n" (inTm_to_string y []);
   Printf.printf "resultat type check %b \n" (check [] y u);
-  Printf.printf "reduction %s \n" (lambda_term_to_string(reduction_forte (typed_to_simple_inTm y) 0))
+  Printf.printf "reduction %s \n" (lambda_term_to_string(reduction_forte (typed_to_simple_inTm y) 0));
+  Printf.printf "test voir si c'est le meme %s \n" (lambda_term_to_string(typed_to_simple_inTm(value_to_inTm 0 (big_step_eval_inTm y []))))
 
 
 let n = Succ(Succ(Succ(Zero)))
@@ -416,8 +369,3 @@ let () =
   Printf.printf "resultat type check %b \n" (check [] n Nat)
  
 
-let zero = SAbs(SAbs(SBVar 0))
-let succ = SAbs(SAbs(SAbs(SAppl(SBVar 1,SAppl(SAppl(SBVar 2,SBVar 1),SBVar 0)))))
-let () = Printf.printf "\n test iter \n";
-	 Printf.printf "%s \n" (lambda_term_to_string(zero));
-	 Printf.printf "%s \n" (lambda_term_to_string(iter n succ zero))

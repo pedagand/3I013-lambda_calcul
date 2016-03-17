@@ -4,27 +4,22 @@ open Lambda
 
 (* Fonctions de manipulation *)
 
-(* XXX: build using the repeated application of 'succ' instead *)
-let rec church_num n =
-  match n with
-  | 0 -> BoundVar 0
-  | n -> Appl(BoundVar 1,(church_num (n-1)))
 		       
-let int_to_lambda_term n =
-  Abs(Abs(church_num n))
-
-(* XXX: kinda cheating. *)
-let rec lambda_term_to_int t =
-  match t with
-  | BoundVar x -> 0
-  | Abs(Abs(x)) -> 0 + (lambda_term_to_int x)
-  | Appl(BoundVar x,y) -> 1 + (lambda_term_to_int y)
-  | FreeVar y -> failwith " to_int FreeVar erreur"
-  | Appl(x,y) -> failwith "to_int Appl erreur"
-  | Abs(x) -> failwith "to_int Abs erreur"
 
 (* Défintions des termes *)
 
-let zero = read "(lambda (f x) x)"
-let succ = read "(lambda (n f x) (f (n f x)))"
-let plus = read "(lambda (m n f x) (m f (n f x)))"
+let zero = Abs("x",Abs("y",Inv(BVar 0)))
+let succ = Abs("n",Abs("f",Abs("x",Inv(Appl(BVar 1,(Inv(Appl(Appl(BVar 2,Inv(BVar 1)),Inv(BVar 0)))))))))
+let testsucc = Appl(Ann(succ,Nat),zero)
+let testmegasucc = Appl(Ann(succ,Nat),Inv(Appl(Ann(succ,Nat),Inv(Appl(Ann(succ,Nat),zero)))))
+let lzero = SAbs(SAbs(SBVar 0))
+let lsucc = SAbs(SAbs(SAbs(SAppl(SBVar 1,SAppl(SAppl(SBVar 2,SBVar 1),SBVar 0)))))
+let () = Printf.printf "\n test iter \n";
+	 Printf.printf "%s \n" (lambda_term_to_string(lzero));
+	 Printf.printf "%s \n" (lambda_term_to_string(iter n lsucc lzero));
+	 Printf.printf "\n test big step eval avec les nat \n";
+	 Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm(testsucc)));
+	 Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm (value_to_inTm 0 (big_step_eval_exTm testsucc []))));
+	 Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm(testmegasucc)));
+	 Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm (value_to_inTm 0 (big_step_eval_exTm testmegasucc []))))
+
