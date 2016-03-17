@@ -40,3 +40,6 @@ let () = Printf.printf "%d \n" (lambda_term_to_int(reduction_forte testsucc 0))
 
 let () = Printf.printf "%s \n" (lambda_term_to_string(plus_test))
 let () = Printf.printf "%s \n" (lambda_term_to_string(reduction_forte plus_test 0)) 
+
+let () = Printf.printf "petit test d'affichage des termes parser \n";
+	 Printf.printf "%s \n " (lambda_term_to_string zero)
