@@ -16,15 +16,22 @@ and exTm =
 
 
 (* ici on va crée le parseur lisp avec le pretty printing *)
-let rec parse env t = 
-  let rec lookup_var env n v = 
-    match env with 
-    | [] -> FVar v 
-    | w :: env when v = w -> BVar n
-    | _ :: env -> lookup_var env (n+1) v
-  in 
-  match t with 
-  | 
-		     
+
+
+
+let gensym =
+  let c = ref 0 in
+  fun () -> incr c; "x" ^ string_of_int !c
+
+(* Premiere remarque, sur le t je ne vois pas comment on va faire pour 
+let rec check contexte inT ty = 
+(*  match inT with 
+  | Abs(x,y) -> 
+     begin 
+     match ty with      
+       | Pi(s,t) -> let freshVar = gensym () in
+		    check ((freshVar,s)::contexte) y t
+       | _ -> failwith "a trouver le message d'erreur" 
+     end *)
 
 
