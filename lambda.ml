@@ -1,4 +1,4 @@
-(* open Sexplib *)
+open Sexplib
 
 
 type typ = 
@@ -50,6 +50,9 @@ match test with VLam x -> x (VNeutral(NFree "x"))*)
 (* XXX: Implement alpha-equivalence/equality of [inTm] and [exTm] *)
 (* test: alphaEq (lambda x x) (lambda y y) = true *)
 
+
+
+
 let rec typ_to_string t = 
   match t with 
   | Bool -> "B"
@@ -58,6 +61,43 @@ let rec typ_to_string t =
 
 
 (* XXX: resurrect the Lisp parser *)
+
+let rec parse_term env t 
+    = let rec lookup_var env n v
+        = match env with
+        | [] -> FVar v
+        | w :: env when v = w -> BVar n
+        | _ :: env -> lookup_var env (n+1) v 
+      in
+      match t with 
+      | Sexp.List [Sexp.List x ; Sexp.Atom ":" ; Sexp.List t] -> 
+	 Inv(Ann((parse env x),(parse_type [] env t)))
+      | Sexp.List [Sexp.Atom "lambda"; Sexp.Atom var; body] -> 
+	 Abs(var,(parse (var::env) body)) 
+      | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars ; body] -> 
+	 let vars = List.map (function 
+			       | Sexp.Atom v -> v
+			       | _ -> failwith "Parser: invalid variable") vars
+	 in 
+	 List.fold_right 
+           (fun var b -> Abs(var,b))
+           vars
+           (parse (List.append (List.rev vars) env) body)
+      | Sexp.Atom v -> Inv(lookup_var env 0 v )
+      | Sexp.List (f::args) -> 
+	 List.fold_left 
+           (fun x y -> Inv(Appl (x, y)))
+           (parse env f) 
+           (List.map (parse env) args)
+      | _ -> failwith "Parser: ill-formed input."
+and parse_type env t = 
+  match t with 
+  | Sexp.List (t:: 
+ 
+  
+		  
+	
+
 (* XXX: pretty print to the Lisp syntax *)
 (* t un terme et l une liste de nom de variable générer avec les binder *)
 let rec exTm_to_string t l = 
