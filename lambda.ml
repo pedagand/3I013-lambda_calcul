@@ -31,7 +31,6 @@ and env = Env of value list
 
 
 
-
 (* fonction de substitution et de réduction ect *)
 let rec substitution_inTm t tsub var = 
   match t with 
