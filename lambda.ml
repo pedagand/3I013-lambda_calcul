@@ -84,7 +84,7 @@ and parse_exTm env t =
         | _ :: env -> lookup_var env (n+1) v 
   in
   match t with 
-  | Sexp.List [x ; Sexp.Atom ":" ; t] -> 
+  | Sexp.List [Sexp.Atom ":" ;x; t] -> 
      Ann((parse_term env x),(parse_type [] t))
   | Sexp.Atom v -> lookup_var env 0 v 
   | Sexp.List (f::args) -> 
@@ -129,16 +129,16 @@ let y = "(lambda (f x) (x))"
 let w = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
 let wi = "(lambda (f a) (f a))"
 let yi = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))
-let yiw = "(((lambda (x) (x)) : ((B B) (B B))) (lambda (y) (y)))"
+let yiw = "((: (lambda (x) (x)) ((B B) (B B))) (lambda (y) (y)))"
 let () = Printf.printf "\n test de parsing \n";
 	 Printf.printf "%s\n" x;
 	 Printf.printf "%s\n" (inTm_to_string (read x) []);
 	 Printf.printf "%s \n" y;
 	 Printf.printf "%s \n" (inTm_to_string (read y) []);
 	 Printf.printf "%s \n" (inTm_to_string w []);
-	 Printf.printf "%s \n" (inTm_to_string (read wi) []);
+	 Printf.printf "reader %s \n" (inTm_to_string (read wi) []);
 	 Printf.printf "%s \n" (inTm_to_string yi []);
-	 Printf.printf "%s \n" (inTm_to_string (read yiw) []);
+	 Printf.printf "reader %s \n" (inTm_to_string (read yiw) []);
 	 Printf.printf "\n\n"
 
 
