@@ -11,3 +11,4 @@ let test2 = Appl(Appl(cifthenelse, cfalse),FreeVar "y")
 (* let () = Printf.printf "%s \n" (lambda_term_to_string (evaluation test2)) *)
 
 let tests = ["ifthenelse" >:: fun ctxt -> assert_equal (evaluation test) (FreeVar "x")]
+	      

@@ -1,5 +1,5 @@
 open OUnit
-
+open Lambda 
 
 let test1 test_ctxt = assert_equal Appl(Abs(BoundVar 0),FreeVar v) (Lambda_calcul.evaluation (FreeVar v));;
 let test2 test_ctxt = assert_equal Appl(Abs(BoundVar 0),Abs(BoundVar 0)) (Lambda_calcul.evaluation (Abs(BoundVar 0)));;
