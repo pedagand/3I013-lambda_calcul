@@ -18,7 +18,7 @@ type value =
   | VLam of (value -> value)
   | VNeutral of neutral 
   | VStar 
-  | VPi of (value -> value)
+  | VPi of value * (value -> value)
 and neutral = 
   | NFree of string 
   | NApp of neutral * value 
@@ -26,12 +26,47 @@ and env = Env of value list
 
 
 (* ici on va crée le parseur lisp avec le pretty printing *)
+let rec parse_term env t = 
+      match t with   
+      | Sexp.List [Sexp.Atom "lambda"; Sexp.Atom var; body] -> 
+	 Abs(var,(parse_term (var::env) body)) 
+      | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars ; body] -> 
+	 let vars = List.map (function 
+			       | Sexp.Atom v -> v
+			       | _ -> failwith "Parser: invalid variable") vars
+	 in 
+	 List.fold_right 
+           (fun var b -> Abs(var,b))
+           vars
+           (parse_term (List.append (List.rev vars) env) body)      
+      | Sexp.List [Sexp.Atom "Pi"; s ; t] -> 
+	 Pi((parse_term env s),(parse_term env t))
+      | Sexp.Atom "*" -> Star      
+      | _ -> Inv(parse_exTm env t)
+and parse_exTm env t = 
+  let rec lookup_var env n v
+    = match env with
+    | [] -> FVar v
+        | w :: env when v = w -> BVar n
+        | _ :: env -> lookup_var env (n+1) v 
+  in
+  match t with 
+  | Sexp.List [Sexp.Atom ":" ;x; t] -> 
+     Ann((parse_term env x),(parse_term env t))
+  | Sexp.Atom v -> lookup_var env 0 v 
+  | Sexp.List (f::args) -> 
+     List.fold_left 
+       (fun x y -> Appl(x, y))
+       (parse_exTm env f)
+       (List.map (parse_term env) args)
+  | _ -> failwith "erreur de parsing" 
 
 
 
 
 
 (* fonction de substitution et de réduction ect *)
+(* cette fonction est "normalement bonne" *)
 let rec substitution_inTm t tsub var = 
   match t with 
   | Inv x -> Inv(substitution_exTm x tsub var)
@@ -47,7 +82,7 @@ and substitution_exTm  t tsub var =
   | Ann(x,y) -> Ann((substitution_inTm x tsub var),(substitution_inTm y tsub var))
 
 
-(*
+
 let vfree name = VNeutral(NFree name)
 
 
@@ -57,20 +92,36 @@ let rec big_step_eval_exTm t envi =
     | FVar v -> vfree v 
     | BVar v -> List.nth envi v
     | Appl(x,y) -> vapp((big_step_eval_exTm x envi),(big_step_eval_inTm y envi))
-    | _ -> failwith "On commence déja par ça et après on vera"
 and vapp v = 
   match v with 
   | ((VLam f),v) -> f v
   | ((VNeutral n),v) -> VNeutral(NApp(n,v))
+  | _ -> failwith "TBD"
 and big_step_eval_inTm t envi = 
   match t with 
   | Inv(i) -> big_step_eval_exTm i envi
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | Star -> VStar
-  | Pi (x,y) -> VPi(function (big_step_eval_inTm x envi) -> (function arg -> (big_step_eval_inTm y (arg :: envi))))
-  | _ -> failwith "On commence déja par ça et après on vera" 
+  | Pi (x,y) -> VPi ((big_step_eval_inTm x envi),(function arg -> (big_step_eval_inTm y (arg :: envi))))
 
-	 *)
+
+let read t = parse_term [] (Sexp.of_string t)
+
+
+let rec value_to_inTm i v =
+  match v with 
+  | VLam(f) -> Abs((string_of_int(i)),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
+  | VNeutral(x) -> Inv(neutral_to_exTm i x)
+  | VStar -> Star
+  | VPi(x,f) -> Pi((value_to_inTm i x),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
+and neutral_to_exTm i v = 
+  match v with 
+  | NFree x -> let k = int_of_string x in
+	       if k <= 0 then BVar(i + k - 1)
+	       else FVar x
+  | NApp(n,x) -> Appl((neutral_to_exTm i n),(value_to_inTm i x))
+
+	 
 let gensym =
   let c = ref 0 in
   fun () -> incr c; "x" ^ string_of_int !c
