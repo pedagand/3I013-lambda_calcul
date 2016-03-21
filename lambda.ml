@@ -27,6 +27,10 @@ let rec parse env t
         | _ :: env -> lookup_var env (n+1) v 
       in
       match t with
+      | Sexp.List [Sexp.Atom "if"; cond; thens ; elses ] -> 
+	 IfThenElse((parse env cond),(parse env thens),(parse env elses))
+      | Sexp.Atom "true" -> True 
+      | Sexp.Atom "false" -> False
       | Sexp.List [Sexp.Atom "lambda"; Sexp.Atom var; body] -> 
          Abs (parse (var :: env) body)
       | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars; body] -> 
@@ -43,7 +47,7 @@ let rec parse env t
          List.fold_left 
            (fun x y -> Appl (x, y))
            (parse env f) 
-           (List.map (parse env) args)
+           (List.map (parse env) args)      
       | _ -> failwith "Parser: ill-formed input."
 
 let read t = parse [] (Sexp.of_string t)
@@ -51,6 +55,30 @@ let read t = parse [] (Sexp.of_string t)
 (** * A simple printer *)
 
 (* TODO: print S-expression instead. *)
+
+
+let gensym =
+  let c = ref 0 in
+  fun () -> incr c; "x" ^ string_of_int !c
+
+
+
+(* a tester*) 
+let rec lambda_term_to_Sexpr t i = 
+  match t with 
+    | FreeVar v -> v 
+    | BoundVar v -> string_of_int v 
+    | Abs x -> 
+       "(lambda (" ^ (string_of_int i) ^ ") " ^ lambda_term_to_Sexpr x (i+1)
+    | Appl(x,y) -> 
+       "(" ^ lambda_term_to_Sexpr x i  ^ " " ^ lambda_term_to_Sexpr y i ^ ")"
+    | True -> "true"
+    | False -> "false" 
+    | IfThenElse (x,y,z) -> 
+       "( if " ^ lambda_term_to_Sexpr x i ^ lambda_term_to_Sexpr x i ^ lambda_term_to_Sexpr x i ^ ")"
+
+
+
 let rec lambda_term_to_string t = 
   match t with
   | FreeVar v -> v
@@ -60,9 +88,6 @@ let rec lambda_term_to_string t =
   | True -> "True"
   | False -> "False"
   | IfThenElse (x,y,z) -> "if " ^ lambda_term_to_string x ^ " then " ^ lambda_term_to_string y ^ " else " ^ lambda_term_to_string z 
-
-let () = Printf.printf "%s \n" (lambda_term_to_string(IfThenElse(True,Abs(BoundVar 0),Abs(BoundVar 1))))
-
 
 (** * Reduction *)
 
@@ -110,7 +135,6 @@ let rec evaluation t
     | IfThenElse (x,y,z) when x = False -> z
     | IfThenElse (x,y,z) -> reduction((IfThenElse ((reduction x), y, z)))
 
-let () = Printf.printf "%s \n" (lambda_term_to_string(evaluation(IfThenElse(True,BoundVar 5,BoundVar 2))))
 
 (* i:numero de la variable a delié bv:compteur pour la fonction t:lambda_terme *) 		       
 let rec relie_libre i bv t =
@@ -163,14 +187,7 @@ let rec reduction_forte t i  =
 
 
 					      
-(*test pour la fonction relie libre *)
 
-let x = Abs(Abs(Appl((FreeVar "4"),FreeVar "0")))
-let () = Printf.printf "%s \n" (lambda_term_to_string(x))
-let () = Printf.printf "%s \n" (lambda_term_to_string(Abs(relie_libre 4 0 x)))
-let y = Abs(Abs(Appl(FreeVar "1",Appl(FreeVar "0",BoundVar 0)))) 
-
-(*tests pour la fonction reduction_forte *)
 
 
 
