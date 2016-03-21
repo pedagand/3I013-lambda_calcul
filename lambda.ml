@@ -92,14 +92,14 @@ and parse_exTm env t =
        (fun x y -> Appl(x, y))
        (parse_exTm env f)
        (List.map (parse_term env) args)
-  | _ -> failwith "erreur de parsing" 
+  | _ -> failwith "erreur de parsing(exTm)" 
 and  parse_type env t = 
   match t with 
   | Sexp.Atom "B" -> Bool
   | Sexp.Atom "N" -> Nat 
   | Sexp.List [x ;y] ->
      Fleche((parse_type [] x),(parse_type [] y)) 
-  | _ -> failwith "erreur dans le parsing" 
+  | _ -> failwith "erreur dans le parsing (type)" 
 
 
 let read t = parse_term [] (Sexp.of_string t)
@@ -158,10 +158,16 @@ let rec lambda_term_to_string t =
 let vfree name = VNeutral(NFree name)
 (* let boundfree i x = *)
 
+let gensym2 =
+  let c = ref 0 in
+  fun () -> incr c; "x" ^ string_of_int !c
 
 let rec value_to_inTm i v =
   match v with 
-  | VLam(f) -> Abs((string_of_int(i)),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
+  | VLam(f) -> let var = gensym2 () in 
+	       begin 
+		 Abs(var,(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
+	       end 
   | VNeutral(x) -> Inv(neutral_to_exTm i x)
 and neutral_to_exTm i v = 
   match v with 
@@ -173,7 +179,7 @@ and neutral_to_exTm i v =
 
 (* XXX: on the model of the above function, implement a function
    taking a [value]/[neutral] to [lambda_term] *)
-
+		     
 (* XXX: turn into unit test *)
 let x = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
 let () = Printf.printf "%s \n" (inTm_to_string x [])
@@ -274,10 +280,7 @@ let rec reduction_forte t i  =
     | SZero -> SZero
     | SSucc x -> SSucc x 
 
-let gensym2 =
-  let c = ref 0 in
-  fun () -> incr c; "x" ^ string_of_int !c
-  
+
 
 let rec big_step_eval_exTm t envi = 
   match t with
