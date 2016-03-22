@@ -23,6 +23,7 @@ and exTm =
   | Appl of exTm * inTm
   | Ifte of inTm * exTm * exTm
   | Ann of inTm * typ
+  | Iter of inTm * inTm * exTm
 
 type lambda_term =
   | SFVar of string 
@@ -30,7 +31,7 @@ type lambda_term =
   | SAbs of lambda_term
   | SAppl of (lambda_term * lambda_term)
   | STrue | SFalse | SIfte of lambda_term * lambda_term * lambda_term
-  | SZero | SSucc of lambda_term
+  | SZero | SSucc of lambda_term | SIter of lambda_term * lambda_term * lambda_term
 
 (* test de l'implémentation du papier "tutorial" *)
 type value = 
@@ -114,6 +115,7 @@ match t with
 | Appl(x,y) -> exTm_to_string x l ^ " " ^ inTm_to_string y l 
 | Ann(x,y) -> inTm_to_string x l ^ ":" ^ typ_to_string y
 | Ifte(x,y,z) -> "if " ^ inTm_to_string x l ^ " then " ^ exTm_to_string y l ^ " else " ^ exTm_to_string z l
+| Iter(n,f,a) -> "(iter " ^ inTm_to_string n l ^ inTm_to_string f l ^ exTm_to_string a l ^ ")" 
 and inTm_to_string t l = 
 match t with 
 | Abs (x,y) -> "([]" ^ x  ^ "." ^ inTm_to_string y (x::l) ^ ")"
@@ -153,6 +155,7 @@ let rec lambda_term_to_string t =
   | SIfte (x,y,z) -> "if " ^ lambda_term_to_string x ^ " then " ^ lambda_term_to_string y ^ " else " ^ lambda_term_to_string z 
   | SZero -> "Zero"
   | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
+  | SIter(n,f,a) -> "(Iter " ^ lambda_term_to_string n ^ lambda_term_to_string f ^  lambda_term_to_string a ^ ")"
 
 
 let vfree name = VNeutral(NFree name)
@@ -200,6 +203,9 @@ and substitution_exTm  t tsub var =
   | Appl(x,y) -> Appl((substitution_exTm x tsub var),(substitution_inTm y tsub var))
   | Ann(x,y) -> Ann((substitution_inTm x tsub var),y)
   | Ifte(x,y,z) -> Ifte((substitution_inTm x tsub var),(substitution_exTm y tsub var),(substitution_exTm z tsub var))
+(* ici je pense peut etre pas a juste titre que on ne doit pas creuser dans n 
+car de toute façon on va type check avant de substituter et que n doit etre un nat et donc il n'aura pas de variable libre *)
+  | Iter(n,f,a) -> Iter((substitution_inTm n tsub var),(substitution_inTm f tsub var),(substitution_exTm a tsub var))
 
 
 let rec substitution t var tsub 
@@ -214,6 +220,7 @@ let rec substitution t var tsub
     | SIfte (x,y,z) -> SIfte((substitution x var tsub),(substitution y var tsub),(substitution z var tsub))
     | SZero -> SZero
     | SSucc x -> SSucc(substitution x var tsub)
+    | SIter (n,f,a) -> SIter((substitution n var tsub),(substitution f var tsub),(substitution a var tsub))
 
 let rec relie_libre i bv t =
   match t with 
@@ -227,6 +234,7 @@ let rec relie_libre i bv t =
   | SIfte(x,y,z) -> SIfte((relie_libre i bv x),(relie_libre i bv y),(relie_libre i bv z))
   | SZero -> SZero
   | SSucc x -> SSucc(relie_libre i bv x)
+  | SIter (n,f,a) -> SIter((relie_libre i bv n),(relie_libre i bv f),(relie_libre i bv a))
 
 let rec relie_libre_inTm i bv t = 
   match t with 
@@ -244,7 +252,7 @@ and relie_libre_exTm  i bv t =
   | Appl(x,y) -> Appl((relie_libre_exTm i bv x),(relie_libre_inTm i bv y))
   | Ifte(x,y,z) -> Ifte((relie_libre_inTm i bv x),(relie_libre_exTm i bv y),(relie_libre_exTm i bv z))
   | Ann(x,y) -> Ann((relie_libre_inTm i bv x),y)
-
+  | _ -> failwith "TBD"
 
 let x = Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))
 let () = Printf.printf "\n Test de la fonction relie_libre_inTm \n";
@@ -279,6 +287,15 @@ let rec reduction_forte t i  =
        end  
     | SZero -> SZero
     | SSucc x -> SSucc x 
+    | SIter(n,f,a) -> 
+       begin 
+	 match n with 
+	 | SSucc x -> (reduction_forte (SIter(x,f,(reduction_forte (SAppl(f,a)) i))) i)
+	 | SZero -> reduction_forte a i 
+	     (* ici je ne failwith pas parceque je pense que le terme est bien formé juste que on ne peut pas le réduire plus, vu que on est pas en typé *)
+	 | _ -> SIter(n,f,a) 
+(* romisfrag : faire des test pour Iter avec la reduction forte *)	
+       end 
 
 
 
@@ -288,6 +305,15 @@ let rec big_step_eval_exTm t envi =
     | FVar v -> vfree v 
     | BVar v -> List.nth envi v
     | Appl(x,y) -> vapp((big_step_eval_exTm x envi),(big_step_eval_inTm y envi))
+    (* tentative d'évaluation de iter *)
+    | Iter(n,f,a) -> 
+       begin
+       match n with 
+(* aucun intéret il faut que je refasse après *)
+       | Succ(x) -> (big_step_eval_exTm(Iter(x,f,a))envi)
+       | Zero -> big_step_eval_exTm a envi		       
+       | _ -> failwith "Iter first arg must be an integer"
+       end 
     | _ -> failwith "On commence déja par ça et après on vera"
 and vapp v = 
   match v with 
@@ -340,6 +366,7 @@ and typed_to_simple_exTm t =
     | Appl(x,y) -> SAppl((typed_to_simple_exTm x),(typed_to_simple_inTm y))
     | Ann(x,y) -> typed_to_simple_inTm x 
     | Ifte(x,y,z) -> SIfte((typed_to_simple_inTm x),(typed_to_simple_exTm y),(typed_to_simple_exTm z))
+    | Iter(n,f,a) -> SIter((typed_to_simple_inTm n),(typed_to_simple_inTm f),(typed_to_simple_exTm a))
 
 let y = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))
 let () = Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm x));
@@ -411,8 +438,16 @@ and synth contexte exT
 			 else failwith "Ifte type of argument not the same"
 		       end 
 		     else failwith "Ifte first param need to be a bool"
-		       
-					 
+    | Iter(n,f,a) -> if check contexte n Nat then
+		       begin 
+			 let type_a = synth contexte a in 
+			 if check contexte f (Fleche (type_a,type_a))
+			 then type_a
+			 else failwith "Iter 2nd arg must be of type_a -> type_a"
+		       end 
+		     else failwith "Iter first arg must be a Nat"
+	
+(* romisfrag : checker la synthèse de Iter *)				 
 		     
  
 (* XXX: turn into unit tests *)
