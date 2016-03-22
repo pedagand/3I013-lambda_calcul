@@ -11,10 +11,19 @@ let () = Printf.printf "test eval derniere chance \n";
 	 Printf.printf "%s \n" (inTm_to_string (value_to_inTm 0 ( (big_step_eval_exTm testsucc [] )))[]);
 	 Printf.printf "%s \n" (inTm_to_string (value_to_inTm 0 (int_to_value 1)) [])
 
-let test1 test_ctxt = assert_equal (BVar 0) (BVar 0)
-let test2 test_ctxt = assert_equal (big_step_eval_exTm testsucc [] ) (int_to_value 1)
+(* test de relie libre *)
+(* ce test marche pas encore *)
+let test1 test_ctxt = assert_equal 
+((Abs("y",(relie_libre_inTm 0 0 (Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))))))) 
+(Abs("y",Abs("x",Inv(Appl(BVar 0,Inv(BVar 0))))))
+(* let test2 test_ctxt = assert_equal (big_step_eval_exTm testsucc [] ) (int_to_value 1) poser la question de ce test qui ne marche pas *)
+(* test de check *)
+let test2 test_ctxt = assert_equal (check [] (Inv(Iter((Succ(Zero)),(Abs("x",Succ(Inv(BVar 0)))),(Ann(Zero,Nat))))) Nat) (true)
+(*test de inTm_to_string *)
+let test3 test_ctxt = assert_equal (inTm_to_string(Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))) [] ) ("([]f.([]a.f a))")
 
-(* poser la question du test qui ne marche pas  *)
+
+
 
 let tests = 
 ["test 1">:: test1;

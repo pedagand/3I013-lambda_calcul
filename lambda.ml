@@ -88,6 +88,8 @@ and parse_exTm env t =
   | Sexp.List [Sexp.Atom ":" ;x; t] -> 
      Ann((parse_term env x),(parse_type [] t))
   | Sexp.Atom v -> lookup_var env 0 v 
+  | Sexp.List [Sexp.Atom "iter"; n ; f ; a] -> 
+     Iter((parse_term env n),(parse_term env f),(parse_exTm env a))
   | Sexp.List (f::args) -> 
      List.fold_left 
        (fun x y -> Appl(x, y))
@@ -183,9 +185,6 @@ and neutral_to_exTm i v =
 (* XXX: on the model of the above function, implement a function
    taking a [value]/[neutral] to [lambda_term] *)
 		     
-(* XXX: turn into unit test *)
-let x = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
-let () = Printf.printf "%s \n" (inTm_to_string x [])
 
 let rec substitution_inTm t tsub var = 
   match t with 
@@ -203,8 +202,6 @@ and substitution_exTm  t tsub var =
   | Appl(x,y) -> Appl((substitution_exTm x tsub var),(substitution_inTm y tsub var))
   | Ann(x,y) -> Ann((substitution_inTm x tsub var),y)
   | Ifte(x,y,z) -> Ifte((substitution_inTm x tsub var),(substitution_exTm y tsub var),(substitution_exTm z tsub var))
-(* ici je pense peut etre pas a juste titre que on ne doit pas creuser dans n 
-car de toute façon on va type check avant de substituter et que n doit etre un nat et donc il n'aura pas de variable libre *)
   | Iter(n,f,a) -> Iter((substitution_inTm n tsub var),(substitution_inTm f tsub var),(substitution_exTm a tsub var))
 
 
