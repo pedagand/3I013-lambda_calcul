@@ -76,6 +76,9 @@ let rec parse_term env t =
            (fun var b -> Abs(var,b))
            vars
            (parse_term (List.append (List.rev vars) env) body)      
+      | Sexp.Atom "zero" -> Zero
+      | Sexp.List [Sexp.Atom "succ"; n] ->
+	 Succ(parse_term env n)
       | _ -> Inv(parse_exTm env t)
 and parse_exTm env t = 
   let rec lookup_var env n v
@@ -127,23 +130,6 @@ match t with
 | Zero -> "Zero"
 | Succ x -> "Succ(" ^ inTm_to_string x [] ^ ")"
 
-(* test pour le parsing ici *)
-let x = "(B : N)"
-let y = "(lambda (f x) (x))"
-let w = Abs("f",Abs("a",Inv(Appl(BVar 1,Inv(BVar 0)))))
-let wi = "(lambda (f a) (f a))"
-let yi = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))
-let yiw = "((: (lambda (x) (x)) ((B B) (B B))) (lambda (y) (y)))"
-let () = Printf.printf "\n test de parsing \n";
-	 Printf.printf "%s\n" x;
-	 Printf.printf "%s\n" (inTm_to_string (read x) []);
-	 Printf.printf "%s \n" y;
-	 Printf.printf "%s \n" (inTm_to_string (read y) []);
-	 Printf.printf "%s \n" (inTm_to_string w []);
-	 Printf.printf "reader %s \n" (inTm_to_string (read wi) []);
-	 Printf.printf "%s \n" (inTm_to_string yi []);
-	 Printf.printf "reader %s \n" (inTm_to_string (read yiw) []);
-	 Printf.printf "\n\n"
 
 
 let rec lambda_term_to_string t = 
@@ -181,9 +167,6 @@ and neutral_to_exTm i v =
 	       else FVar x
   | NApp(n,x) -> Appl((neutral_to_exTm i n),(value_to_inTm i x))
 
-
-(* XXX: on the model of the above function, implement a function
-   taking a [value]/[neutral] to [lambda_term] *)
 		     
 
 let rec substitution_inTm t tsub var = 
@@ -251,11 +234,9 @@ and relie_libre_exTm  i bv t =
   | Ann(x,y) -> Ann((relie_libre_inTm i bv x),y)
   | _ -> failwith "TBD"
 
+(* a supprimer une fois les tests finis *)
 let x = Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))
-let () = Printf.printf "\n Test de la fonction relie_libre_inTm \n";
-	 Printf.printf "x =  %s \n" (inTm_to_string x []);
-	 Printf.printf "Abs(x) = %s \n" (inTm_to_string (Abs("y",(relie_libre_inTm 0 0 x))) []);
-	 Printf.printf "Fin test relie_libre_inTm \n"
+
 
 (* XXX: not verified, run (many) tests first *)
 let rec reduction_forte t i  = 
@@ -332,21 +313,6 @@ let () = Printf.printf " \n test de big_step_eval \n"
 
 
 
-
-(* fonction d'iteration d'une fonction n fois *)
-let rec iter n f a = 
-  match n with
-    | Zero -> a
-    | Succ(t) -> iter t f (reduction_forte (SAppl(f,a)) 0)
-    | _ -> 
-       (* XXX: hehe, careful here: you could be running against 
-           [(lambda x (ifte (S x) not false))]
-          which should reduce to
-           [(lambda x (ifte x not (not false)))]
-          ending with
-           [(lambda x (ifte x not true))] *)
-       failwith "first arg must be a Nat" 
-
 	       
 let rec typed_to_simple_inTm t = 
   match t with 
@@ -365,19 +331,9 @@ and typed_to_simple_exTm t =
     | Ifte(x,y,z) -> SIfte((typed_to_simple_inTm x),(typed_to_simple_exTm y),(typed_to_simple_exTm z))
     | Iter(n,f,a) -> SIter((typed_to_simple_inTm n),(typed_to_simple_inTm f),(typed_to_simple_exTm a))
 
-let y = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))
-let () = Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm x));
-	 Printf.printf "%s \n" (inTm_to_string y []);
-	 Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm y))
-
-let () = Printf.printf "C'est moche \n \n" 
-
 let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
-(* let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (FVar "w") 0) [])
-let() = Printf.printf "%s \n" (inTm_to_string(substitution_inTm x (Ann(SAbs("y",Inv(BVar 0)),Fleche(Bool,Bool))) 0) [] ) *)
-let () = Printf.printf "C'est moche \n \n" 
-let () = Printf.printf "%s \n" (exTm_to_string y [])  
-let () = Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm y))
+ 
+
   
 
 let gensym =
@@ -455,10 +411,6 @@ let y = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,B
 let u = Fleche(Bool,Bool)
 
 let () = 
-  Printf.printf "truc a checker %s \n" (inTm_to_string x []);
-  Printf.printf "resultat type check %b \n" (check [] x t);
-  Printf.printf "truc a checker %s \n" (inTm_to_string y []);
-  Printf.printf "resultat type check %b \n" (check [] y u);
   Printf.printf "reduction %s \n" (lambda_term_to_string(reduction_forte (typed_to_simple_inTm y) 0));
   Printf.printf "test voir si c'est le meme %s \n" (lambda_term_to_string(typed_to_simple_inTm(value_to_inTm 0 (big_step_eval_inTm y []))))
 
