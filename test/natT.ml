@@ -4,13 +4,12 @@ open Lambda
 open Nat
 
 let testsucc = Appl(Ann(succ,(Fleche (Nat,(Fleche (Nat,(Fleche (Nat,Nat))))))),(value_to_inTm 0 (int_to_value 0)))
-(*let succ_test = Abs(Abs(Abs(Appl(BoundVar 1,Appl(Appl(BoundVar 2,BoundVar 1),BoundVar 0)))))
-let plus_test = Appl(Appl(plus,(int_to_lambda_term 2)),(int_to_lambda_term 2)) *)
 
+(*
 let () = Printf.printf "test eval derniere chance \n";
 	 Printf.printf "%s \n" (inTm_to_string (value_to_inTm 0 ( (big_step_eval_exTm testsucc [] )))[]);
 	 Printf.printf "%s \n" (inTm_to_string (value_to_inTm 0 (int_to_value 1)) [])
-
+ *)
 
 (* test de relie libre *)
 (* ce test marche pas encore *)
@@ -71,3 +70,14 @@ let () = Printf.printf "%d \n" (lambda_term_to_int(int_to_lambda_term 0)) *)
 
 
  *)
+
+
+(*
+let () = 
+  Printf.printf "\n test big step eval avec les nat \n";
+  Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm(testsucc)));
+  Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm (value_to_inTm 0 (big_step_eval_exTm testsucc []))));
+  Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_exTm(testmegasucc)));
+  Printf.printf "%s \n" (lambda_term_to_string(typed_to_simple_inTm (value_to_inTm 0 (big_step_eval_exTm testmegasucc []))))
+
+  *)

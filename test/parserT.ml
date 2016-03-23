@@ -1,8 +1,6 @@
 open OUnit2
 open Lambda
 
-let () = Printf.printf "parse %s \n" (inTm_to_string (read "((: (lambda x x) N) y)") [])
-
 let inputs
     = [("(lambda x x)", Abs("x",Inv(BVar 0)));
        ("(lambda x y)", Abs("x",Inv(FVar "y")));

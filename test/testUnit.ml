@@ -3,12 +3,16 @@ open Lambda
 
 
 (* test de checker  *)
-let test1 test_ctxt = assert_equal 
-			(check [] (Abs("f",Abs("g",Inv(Appl(BVar 1,Inv(BVar 0)))))) (Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool)))) 
-			(true)
-let test2 test_ctxt = assert_equal 
-			(check [] (Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))) (Fleche(Bool,Bool)) ) 
-			(true)
+let test_check1 test_ctxt = assert_equal 
+			      (check [] (Abs("f",Abs("g",Inv(Appl(BVar 1,Inv(BVar 0)))))) (Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool)))) 
+			      (true)
+let test_check2 test_ctxt = assert_equal 
+			      (check [] (Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))) (Fleche(Bool,Bool)) ) 
+			      (true)
+let test_check3 test_ctxt = assert_equal 
+			      (check [] (Inv(Iter(Succ(Zero),Abs("x",Inv(BVar 0)),Ann(Zero,Nat)))) Nat) 
+			      (true) 
+			      
 
 
 (* test de reduction forte  *)
@@ -43,16 +47,11 @@ let test7 test_ctxt = assert_equal
 
 
 let eval = 
-["test 1">:: test1;
- "test 2">:: test2;
+["test 1">:: test_check1;
+ "test 2">:: test_check2;
+ "test 4">:: test_check3;
  "test 3">:: test3;
  "test 4">:: test4;
  "test 5">:: test5;
  "test 6">:: test6;
  "test 7">:: test7;]
-(*
-;;
- let () = 
-  run_test_tt_main eval
-
-;; *)

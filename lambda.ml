@@ -234,8 +234,6 @@ and relie_libre_exTm  i bv t =
   | Ann(x,y) -> Ann((relie_libre_inTm i bv x),y)
   | _ -> failwith "TBD"
 
-(* a supprimer une fois les tests finis *)
-let x = Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))
 
 
 (* XXX: not verified, run (many) tests first *)
@@ -303,15 +301,6 @@ and big_step_eval_inTm t envi =
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | _ -> failwith "On commence déja par ça et après on vera"
 		
-(* let () = Printf.printf "\n test de value_to_string \n";
-	 Printf.printf "%s \n" (inTm_to_string x []);
-	 Printf.printf "%s \n" (value_to_string(big_step_eval_inTm x [])) *)
-
-let () = Printf.printf " \n test de big_step_eval \n"
-    
-       
-
-
 
 	       
 let rec typed_to_simple_inTm t = 
@@ -331,17 +320,10 @@ and typed_to_simple_exTm t =
     | Ifte(x,y,z) -> SIfte((typed_to_simple_inTm x),(typed_to_simple_exTm y),(typed_to_simple_exTm z))
     | Iter(n,f,a) -> SIter((typed_to_simple_inTm n),(typed_to_simple_inTm f),(typed_to_simple_exTm a))
 
-let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k"))
- 
-
-  
 
 let gensym =
   let c = ref 0 in
   fun () -> incr c; "x" ^ string_of_int !c
-
-(* i:inTm et t:typ e:exTm  *)
-(* ici le compt doit etre supérieur a toutes les variables liées déja présentes *)
 
 let rec check contexte inT ty
     = match inT with
@@ -405,20 +387,7 @@ and synth contexte exT
  
 (* XXX: turn into unit tests *)
 (* [https://en.wikipedia.org/wiki/B,_C,_K,_W_system] *)
-let x = Abs("f",Abs("g",Inv(Appl(BVar 1,Inv(BVar 0)))))
-let t = Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))
-let y = Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))
-let u = Fleche(Bool,Bool)
-
-let () = 
-  Printf.printf "reduction %s \n" (lambda_term_to_string(reduction_forte (typed_to_simple_inTm y) 0));
-  Printf.printf "test voir si c'est le meme %s \n" (lambda_term_to_string(typed_to_simple_inTm(value_to_inTm 0 (big_step_eval_inTm y []))))
 
 
-let n = Succ(Succ(Succ(Zero)))
-let () = 
-  Printf.printf "\n test sur les bool \n";
-  Printf.printf "%s \n" (inTm_to_string n []);
-  Printf.printf "resultat type check %b \n" (check [] n Nat)
- 
+
 
