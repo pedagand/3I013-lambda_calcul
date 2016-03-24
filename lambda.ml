@@ -191,7 +191,7 @@ match t with
 
 
 
-(* a supprimer une fois le pretty printing des lambda termes normaux fait *)
+(* a transformer en pretty printing  *)
 
 let rec lambda_term_to_string t = 
   match t with
@@ -205,8 +205,9 @@ let rec lambda_term_to_string t =
   | SZero -> "Zero"
   | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
   | SIter(n,f,a) -> "(Iter " ^ lambda_term_to_string n ^ lambda_term_to_string f ^  lambda_term_to_string a ^ ")"
-  | _ -> failwith "pas encore fait" 
-
+  | SPair(x,y) -> "(" ^ lambda_term_to_string x ^ "," ^ lambda_term_to_string y ^ ")"
+  | SP0(x) -> "(SP0" ^ lambda_term_to_string x ^ ")"
+  | SP1(x) -> "(SP1" ^ lambda_term_to_string x ^ ")"
 
 let vfree name = VNeutral(NFree name)
 (* let boundfree i x = *)
@@ -351,8 +352,18 @@ let rec reduction_forte t i  =
 	 | _ -> SIter(n,f,a) 
        end 
     | SPair (x,y) -> SPair((reduction_forte x i),(reduction_forte y i))
-    | SP0(x) -> SP0(reduction_forte x i)
-    | SP1(x) -> SP1(reduction_forte x i)
+    | SP0(x) -> 
+       begin       
+	 match (reduction_forte x i) with 
+	 | SPair(x,y) -> reduction_forte x i
+	 | _ -> SP0(reduction_forte x i)
+      end
+    | SP1(x) -> 
+       begin       
+	 match (reduction_forte x i) with 
+	 | SPair(x,y) -> reduction_forte y i
+	 | _ -> SP1(reduction_forte x i)
+       end
 
 
 let rec big_step_eval_exTm t envi = 
