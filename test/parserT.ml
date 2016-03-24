@@ -10,7 +10,7 @@ let inputs
        ("((: (lambda x x) N) y)", Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Nat),Inv(FVar "y"))));
        ("(iter (succ zero) (lambda x x) y)", Inv(Iter((Succ(Zero)),(Abs("x",Inv(BVar 0))),FVar "y")));
        ("((: (lambda (x) (x)) (-> (-> B B) (-> B B))) (lambda (y) (y)))",Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0)))))));
-       ("(, (lambda x x) (y))",Pair(Abs("x",Inv(BVar 0)),Inv(FVar("y"))));
+       ("(, (lambda x x) zero )",Pair(Abs("x",Inv(BVar 0)),Zero));
        ("(: (lambda x x) (* B B))",Inv(Ann(Abs("x",Inv(BVar 0)),Croix(Bool,Bool))));
       ("(ifte true (: (, true false) (* B B)) y)",Inv(Ifte(True,Ann((Pair(True,False)),(Croix(Bool,Bool))),FVar "y")))]
 
