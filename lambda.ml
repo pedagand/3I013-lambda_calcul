@@ -36,6 +36,8 @@ type lambda_term =
 (* test de l'implémentation du papier "tutorial" *)
 type value = 
   | VLam of (value -> value)
+  | VZero
+  | VSucc of value
   | VNeutral of neutral 
 and neutral = 
   | NFree of string 
@@ -282,15 +284,15 @@ let rec big_step_eval_exTm t envi =
     | BVar v -> List.nth envi v
     | Appl(x,y) -> vapp((big_step_eval_exTm x envi),(big_step_eval_inTm y envi))
     (* tentative d'évaluation de iter *)
-    | Iter(n,f,a) -> 
-       begin
-       match n with 
-(* aucun intéret il faut que je refasse après *)
-       | Succ(x) -> (big_step_eval_exTm(Iter(x,f,a))envi)
-       | Zero -> big_step_eval_exTm a envi		       
-       | _ -> failwith "Iter first arg must be an integer"
-       end 
+    | Iter(n,f,a) -> viter(big_step_eval_inTm n envi, 
+                           big_step_eval_inTm f envi,
+                           big_step_eval_exTm a envi)
     | _ -> failwith "On commence déja par ça et après on vera"
+and viter (v, f,a) = 
+  match v with
+  | VZero ->  a
+  | VSucc v -> vapp (f, (viter (v, f, a)))
+  | _ -> failwith "Impossible"
 and vapp v = 
   match v with 
   | ((VLam f),v) -> f v
@@ -299,6 +301,8 @@ and big_step_eval_inTm t envi =
   match t with 
   | Inv(i) -> big_step_eval_exTm i envi
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
+  | Zero -> VZero
+  | Succ n -> VSucc (big_step_eval_inTm n envi)
   | _ -> failwith "On commence déja par ça et après on vera"
 		
 
