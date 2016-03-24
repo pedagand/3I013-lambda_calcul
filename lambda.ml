@@ -6,7 +6,7 @@ open Sexplib
 type inTm = 
   | Abs of string * inTm
   | Inv of exTm
-  | Pi of inTm * inTm 
+  | Pi of string * inTm * inTm 
   | Star
 and exTm = 
   | Ann of inTm * inTm 
@@ -33,14 +33,14 @@ let rec parse_term env t =
       | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars ; body] -> 
 	 let vars = List.map (function 
 			       | Sexp.Atom v -> v
-			       | _ -> failwith "Parser: invalid variable") vars
+			       | _ -> failwith "Parser: Lambdainvalid variable") vars
 	 in 
 	 List.fold_right 
            (fun var b -> Abs(var,b))
            vars
            (parse_term (List.append (List.rev vars) env) body)      
-      | Sexp.List [Sexp.Atom "Pi"; s ; t] -> 
-	 Pi((parse_term env s),(parse_term env t))
+      | Sexp.List [Sexp.Atom "pi"; Sexp.Atom v ; s ; t] -> 
+	 Pi(v,(parse_term env s),(parse_term env t))        
       | Sexp.Atom "*" -> Star      
       | _ -> Inv(parse_exTm env t)
 and parse_exTm env t = 
@@ -72,7 +72,7 @@ let rec substitution_inTm t tsub var =
   | Inv x -> Inv(substitution_exTm x tsub var)
   | Abs(x,y) -> Abs(x,(substitution_inTm y tsub (var+1)))
   | Star -> Star
-  | Pi(x,y) -> Pi ((substitution_inTm x tsub var),(substitution_inTm x tsub (var+1)))
+  | Pi(v,x,y) -> Pi (v,(substitution_inTm x tsub var),(substitution_inTm x tsub (var+1)))
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
@@ -102,18 +102,24 @@ and big_step_eval_inTm t envi =
   | Inv(i) -> big_step_eval_exTm i envi
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | Star -> VStar
-  | Pi (x,y) -> VPi ((big_step_eval_inTm x envi),(function arg -> (big_step_eval_inTm y (arg :: envi))))
+  | Pi (v,x,y) -> VPi ((big_step_eval_inTm x envi),(function arg -> (big_step_eval_inTm y (arg :: envi))))
 
 
 let read t = parse_term [] (Sexp.of_string t)
 
+let gensym =
+  let c = ref 0 in
+  fun () -> incr c; "x" ^ string_of_int !c
 
 let rec value_to_inTm i v =
   match v with 
   | VLam(f) -> Abs((string_of_int(i)),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
   | VNeutral(x) -> Inv(neutral_to_exTm i x)
   | VStar -> Star
-  | VPi(x,f) -> Pi((value_to_inTm i x),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
+  | VPi(x,f) -> let var = gensym () in 
+		begin
+		Pi(var,(value_to_inTm i x),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
+		end
 and neutral_to_exTm i v = 
   match v with 
   | NFree x -> let k = int_of_string x in
@@ -121,10 +127,7 @@ and neutral_to_exTm i v =
 	       else FVar x
   | NApp(n,x) -> Appl((neutral_to_exTm i n),(value_to_inTm i x))
 
-	 
-let gensym =
-  let c = ref 0 in
-  fun () -> incr c; "x" ^ string_of_int !c
+	
 
 (* Premiere remarque, sur le t je ne vois pas comment on va faire pour *)
 let rec check contexte inT ty = 
@@ -132,18 +135,16 @@ let rec check contexte inT ty =
   | Abs(x,y) -> 
      begin 
      match ty with      
-       (* ici il faut faire la substitution dans y avec la freshVar *)
-       | Pi(s,t) -> let freshVar = gensym () in
+       | Pi(v,s,t) -> let freshVar = gensym () in
 		    check ((freshVar,s)::contexte) (substitution_inTm y (FVar(freshVar)) 0) t
-       | _ -> failwith "a trouver le message d'erreur" 
+       | _ -> failwith "trouver le message d'erreur" 
      end 
-(* ici il va falloir faire une fonction de réduction avant de pouvoir type checker tout ça réellement il faut réduire ty et tyT  *)
   |  Inv(t) -> 
       let tyT = synth contexte t in
       begin 	
-	tyT = ty
+	(big_step_eval_inTm tyT []) = (big_step_eval_inTm ty [])
       end
-  | Pi(s,t) when check contexte s Star -> let freshVar = gensym () in 
+  | Pi(v,s,t) when check contexte s Star -> let freshVar = gensym () in 
 					  check ((freshVar,s)::contexte) (substitution_inTm t (FVar(freshVar)) 0) Star
   | Star -> 
      begin 
@@ -165,7 +166,7 @@ and synth contexte exT =
      let pTy = synth contexte x in 
      begin 
        match pTy with 
-       | Pi(s,t) -> if check contexte y s 
+       | Pi(v,s,t) -> if check contexte y s 
 		    then (substitution_inTm t (Ann(y,s)) 0)
 		    else failwith "mauvais type d'argument pour l'application"
        | _ -> failwith "Mauvais annotation" 				  

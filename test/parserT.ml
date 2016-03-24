@@ -7,7 +7,9 @@ let inputs
        ("(x y z)", Inv(Appl(Appl(FVar "x", Inv(FVar "y")), Inv(FVar "z"))));
        ("(lambda (x y z) (x (y z)))", Abs("x",Abs("y",Abs("z",Inv(Appl(BVar 2, Inv(Appl(BVar 1, Inv(BVar 0)))))))));
        ("(lambda (x y z) (x y z))", Abs("x",Abs("y",Abs("z",Inv(Appl (Appl (BVar 2, Inv(BVar 1)), Inv(BVar 0)))))));
-       ("((: (lambda x x) *) y)", Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Star),Inv(FVar "y")))) ]
+       ("((: (lambda x x) *) y)", Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Star),Inv(FVar "y"))));
+      ("(pi x * *)",Pi("x",Star,Star));
+      ("(pi x (pi y * *) *)", Pi("x",Pi("y",Star,Star),Star))]
 
 
 let tests
