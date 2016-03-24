@@ -22,7 +22,6 @@ type value =
 and neutral = 
   | NFree of string 
   | NApp of neutral * value 
-and env = Env of value list 
 
 
 (* ici on va crée le parseur lisp avec le pretty printing *)
@@ -129,7 +128,7 @@ and neutral_to_exTm i v =
 
 	
 
-(* Premiere remarque, sur le t je ne vois pas comment on va faire pour *)
+(* idée faire un moyen de backtraquer avec une liste en argument ou a chaque fois que on effectue une opération il faut la mettre dans cette liste *)
 let rec check contexte inT ty = 
   match inT with 
   | Abs(x,y) -> 
@@ -137,7 +136,7 @@ let rec check contexte inT ty =
      match ty with      
        | Pi(v,s,t) -> let freshVar = gensym () in
 		    check ((freshVar,s)::contexte) (substitution_inTm y (FVar(freshVar)) 0) t
-       | _ -> failwith "trouver le message d'erreur" 
+       | _ -> failwith "Abs must be of type " 
      end 
   |  Inv(t) -> 
       let tyT = synth contexte t in
