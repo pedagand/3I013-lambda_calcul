@@ -22,9 +22,8 @@ let test3 test_ctxt = assert_equal
 
 
 
+
 (* test de typed_to_simple_inTm  *)
-(* let x = Abs("x",Inv(Appl(BVar 0,Inv(FVar "0")))) *)
-(* let y = Appl((Ann(x,(Fleche(Bool,Fleche(Bool,Bool))))),Inv(FVar "k")) *)
 let test4 test_ctxt = assert_equal 
 			(typed_to_simple_inTm (Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))))
 			(SAbs(SAppl(SBVar 0,SFVar "0")))
@@ -43,7 +42,31 @@ let test7 test_ctxt = assert_equal
 			(substitution_inTm (Abs("x",Inv(Appl(BVar 0,Inv(FVar "0"))))) (Ann(Abs("y",Inv(BVar 0)),Fleche(Bool,Bool))) (-1))
 			((Abs("x",Inv(Appl((Ann(Abs("y",Inv(BVar 0)),Fleche(Bool,Bool))),Inv(FVar "0")))))) 
 
+let () = Printf.printf "%s" ((pretty_print_inTm (Inv(Ann(Abs("x",Inv(BVar 0)),Croix(Bool,Bool)))) []))
 
+(* test de pretty printing *)
+let test8 test_ctxt = assert_equal 
+			(read(pretty_print_inTm (Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Nat),Inv(FVar "y")))) []))
+			(read "((: (lambda x x) N) y)")
+let test9 test_ctxt = assert_equal 
+			(read(pretty_print_inTm (Inv(Iter((Succ(Zero)),(Abs("x",Inv(BVar 0))),FVar "y")))  [] ))
+			(read "(iter (succ zero) (lambda x x) y)")
+let test10 test_ctxt = assert_equal 
+			 (read(pretty_print_inTm (Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Fleche(Fleche(Bool,Bool),Fleche(Bool,Bool))),(Abs("y",(Inv(BVar 0))))))) [] ))
+			 (read "((: (lambda (x) (x)) (-> (-> B B) (-> B B))) (lambda (y) (y)))")
+
+let test11 test_ctxt = assert_equal
+			 (read(pretty_print_inTm (Abs("x",Abs("y",Abs("z",Inv(Appl(BVar 2, Inv(Appl(BVar 1, Inv(BVar 0))))))))) [] ))
+			 (read "(lambda (x y z) (x (y z)))")
+let test12 test_ctxt = assert_equal
+			 (read(pretty_print_inTm (Pair(Abs("x",Inv(BVar 0)),Inv(FVar("y")))) [] ))
+			 (read "(, (lambda x x) (y))") 
+let test13 test_ctxt = assert_equal 
+			 (read(pretty_print_inTm (Inv(Ann(Abs("x",Inv(BVar 0)),Croix(Bool,Bool)))) []))
+			 (read "(: (lambda x x) (* B B))")
+let test14 test_ctxt = assert_equal 
+			 (read(pretty_print_inTm (Inv(Ifte(True,Ann((Pair(True,False)),(Croix(Bool,Bool))),FVar "y")))[] ))
+			 (read "(ifte true (: (, true false) (* B B)) y)")
 
 
 let eval = 
@@ -54,4 +77,11 @@ let eval =
  "test 4">:: test4;
  "test 5">:: test5;
  "test 6">:: test6;
- "test 7">:: test7;]
+ "test 7">:: test7;
+ "test 8">:: test8;
+ "test 9">:: test9;
+"test 10">:: test10;
+"test 11">:: test11;
+"test 12">:: test12;
+"test 13">:: test13;
+"test 14">:: test14;]

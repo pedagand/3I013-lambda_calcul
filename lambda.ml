@@ -5,6 +5,7 @@ type typ =
 | Bool
 | Nat 
 | Fleche of typ * typ
+| Croix of typ * typ 
 
 (* Correspondance avec le papier 
 Abs = Lam
@@ -15,6 +16,7 @@ type inTm =
   | Inv of exTm
   | Zero 
   | Succ of inTm
+  | Pair of inTm * inTm 
 (* Iter of inTm * inTm * inTm *)
 (* XXX: You've forgotten the iterator for natural numbers *)
 and exTm = 
@@ -24,6 +26,8 @@ and exTm =
   | Ifte of inTm * exTm * exTm
   | Ann of inTm * typ
   | Iter of inTm * inTm * exTm
+  | P0 of exTm
+  | P1 of exTm 
 
 type lambda_term =
   | SFVar of string 
@@ -32,17 +36,24 @@ type lambda_term =
   | SAppl of (lambda_term * lambda_term)
   | STrue | SFalse | SIfte of lambda_term * lambda_term * lambda_term
   | SZero | SSucc of lambda_term | SIter of lambda_term * lambda_term * lambda_term
+  | SPair of lambda_term * lambda_term 
+  | SP0 of lambda_term 
+  | SP1 of lambda_term
 
 (* test de l'implémentation du papier "tutorial" *)
 type value = 
   | VLam of (value -> value)
+  | VTrue 
+  | VFalse
   | VZero
   | VSucc of value
   | VNeutral of neutral 
+  | VPair of value * value 
 and neutral = 
   | NFree of string 
   | NApp of neutral * value 
-and env = Env of value list
+
+
 
 (* Le commentaire suivant représente ce qui perdra l'humanité *)
 (*let test = VLam(function x -> match x with 
@@ -61,6 +72,7 @@ let rec typ_to_string t =
   | Bool -> "B"
   | Nat -> "N"
   | Fleche(x,y) -> typ_to_string x ^ "->" ^ typ_to_string y
+  | Croix(x,y) -> "(" ^ typ_to_string x ^ " X " ^ typ_to_string y ^ ")"
 
 
 (* XXX: resurrect the Lisp parser *)
@@ -79,8 +91,12 @@ let rec parse_term env t =
            vars
            (parse_term (List.append (List.rev vars) env) body)      
       | Sexp.Atom "zero" -> Zero
+      | Sexp.Atom "true" -> True 
+      | Sexp.Atom "false" -> False 
       | Sexp.List [Sexp.Atom "succ"; n] ->
 	 Succ(parse_term env n)
+      | Sexp.List [Sexp.Atom ",";x;y] ->
+	 Pair((parse_term env x),(parse_term env y))
       | _ -> Inv(parse_exTm env t)
 and parse_exTm env t = 
   let rec lookup_var env n v
@@ -90,6 +106,12 @@ and parse_exTm env t =
         | _ :: env -> lookup_var env (n+1) v 
   in
   match t with 
+  | Sexp.List [Sexp.Atom "p0";x] ->
+     P0(parse_exTm env x)
+  | Sexp.List [Sexp.Atom "p1";x] ->
+     P0(parse_exTm env x)
+  | Sexp.List [Sexp.Atom "ifte"; b ; thens ; elses ] -> 
+     Ifte((parse_term env b),(parse_exTm env thens),(parse_exTm env elses))
   | Sexp.List [Sexp.Atom ":" ;x; t] -> 
      Ann((parse_term env x),(parse_type [] t))
   | Sexp.Atom v -> lookup_var env 0 v 
@@ -105,15 +127,47 @@ and  parse_type env t =
   match t with 
   | Sexp.Atom "B" -> Bool
   | Sexp.Atom "N" -> Nat 
-  | Sexp.List [x ;y] ->
+  | Sexp.List [Sexp.Atom "*" ; x ; y] ->
+     Croix((parse_type [] x),(parse_type[] y))
+  | Sexp.List [Sexp.Atom "->"; x ;y] ->
      Fleche((parse_type [] x),(parse_type [] y)) 
   | _ -> failwith "erreur dans le parsing (type)" 
 
 
 let read t = parse_term [] (Sexp.of_string t)
 					     		 	
+let rec pretty_print_inTm t l = 
+  match t with 
+  | Abs (x,y) -> "(lambda " ^ x ^ " " ^ pretty_print_inTm y (x :: l) ^ ")"
+  | Inv x -> pretty_print_exTm x l
+  | True -> "true"
+  | False -> "false"
+  | Zero -> "zero"
+  | Succ x -> "(succ " ^ pretty_print_inTm x l ^ ")"
+  | Pair (x,y) -> "(, " ^ pretty_print_inTm x l ^ " " ^ pretty_print_inTm y l ^ ")"
+and pretty_print_exTm t l =
+  match t with 
+  | FVar x -> x 
+  | BVar x -> List.nth l x	      
+  | Appl(x,y) -> "( " ^ pretty_print_exTm x l ^ " " ^ pretty_print_inTm y l ^ ")"
+  | Ann(x,y) -> "(: " ^ pretty_print_inTm x l ^ " " ^ pretty_print_type y l ^ ")"
+  | Ifte(x,y,z) -> "(ifte " ^ pretty_print_inTm x l ^ " " ^ pretty_print_exTm y l ^ " " ^ pretty_print_exTm z l ^  ")"
+  | Iter(n,f,a) -> "(iter " ^ pretty_print_inTm n l ^ " " ^ pretty_print_inTm f l ^ " " ^  pretty_print_exTm a l ^ ")"
+  | P0(x) -> "(p0 " ^ pretty_print_exTm x l ^ ")"
+  | P1(x) -> "(p1 " ^ pretty_print_exTm x l ^ ")"
+and pretty_print_type t l = 
+  match t with 
+  | Bool -> "B"
+  | Nat -> "N"
+  | Fleche(x,y) -> "(-> " ^ pretty_print_type x l ^ " " ^ pretty_print_type y l ^ ")" 
+  | Croix(x,y) ->  "(* " ^ pretty_print_type x l ^ " " ^ pretty_print_type y l ^ ")" 
+    
 
-(* XXX: pretty print to the Lisp syntax *)
+
+
+
+
+
 (* t un terme et l une liste de nom de variable générer avec les binder *)
 let rec exTm_to_string t l = 
 match t with
@@ -123,16 +177,21 @@ match t with
 | Ann(x,y) -> inTm_to_string x l ^ ":" ^ typ_to_string y
 | Ifte(x,y,z) -> "if " ^ inTm_to_string x l ^ " then " ^ exTm_to_string y l ^ " else " ^ exTm_to_string z l
 | Iter(n,f,a) -> "(iter " ^ inTm_to_string n l ^ inTm_to_string f l ^ exTm_to_string a l ^ ")" 
+| P0(x) -> "P0(" ^ exTm_to_string x l ^ ")"
+| P1(x) -> "P0(" ^ exTm_to_string x l ^ ")"
 and inTm_to_string t l = 
 match t with 
 | Abs (x,y) -> "([]" ^ x  ^ "." ^ inTm_to_string y (x::l) ^ ")"
 | Inv x -> exTm_to_string x l
-| True -> "True"
-| False -> "False"
-| Zero -> "Zero"
-| Succ x -> "Succ(" ^ inTm_to_string x [] ^ ")"
+| True -> "true"
+| False -> "false"
+| Zero -> "zero"
+| Succ x -> "succ(" ^ inTm_to_string x l ^ ")"
+| Pair (x,y) -> "(" ^ inTm_to_string x l ^ "," ^ inTm_to_string y l ^ ")"
 
 
+
+(* a supprimer une fois le pretty printing des lambda termes normaux fait *)
 
 let rec lambda_term_to_string t = 
   match t with
@@ -146,6 +205,7 @@ let rec lambda_term_to_string t =
   | SZero -> "Zero"
   | SSucc x -> "Succ( " ^ lambda_term_to_string x ^ ")" 
   | SIter(n,f,a) -> "(Iter " ^ lambda_term_to_string n ^ lambda_term_to_string f ^  lambda_term_to_string a ^ ")"
+  | _ -> failwith "pas encore fait" 
 
 
 let vfree name = VNeutral(NFree name)
@@ -162,6 +222,11 @@ let rec value_to_inTm i v =
 		 Abs(var,(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
 	       end 
   | VNeutral(x) -> Inv(neutral_to_exTm i x)
+  | VSucc(n) -> Succ(value_to_inTm i n)
+  | VZero -> Zero 
+  | VTrue -> True 
+  | VFalse -> False 
+  | VPair(x,y) -> Pair((value_to_inTm i x),(value_to_inTm i y)) 
 and neutral_to_exTm i v = 
   match v with 
   | NFree x -> let k = int_of_string x in
@@ -179,6 +244,7 @@ let rec substitution_inTm t tsub var =
   | False -> False 
   | Zero -> Zero
   | Succ x -> Succ(substitution_inTm x tsub var)
+  | Pair(x,y) -> Pair((substitution_inTm x tsub var),(substitution_inTm y tsub var))
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
@@ -188,6 +254,8 @@ and substitution_exTm  t tsub var =
   | Ann(x,y) -> Ann((substitution_inTm x tsub var),y)
   | Ifte(x,y,z) -> Ifte((substitution_inTm x tsub var),(substitution_exTm y tsub var),(substitution_exTm z tsub var))
   | Iter(n,f,a) -> Iter((substitution_inTm n tsub var),(substitution_inTm f tsub var),(substitution_exTm a tsub var))
+  | P0(x) -> P0(substitution_exTm x tsub var)
+  | P1(x) -> P1(substitution_exTm x tsub var)
 
 
 let rec substitution t var tsub 
@@ -203,6 +271,9 @@ let rec substitution t var tsub
     | SZero -> SZero
     | SSucc x -> SSucc(substitution x var tsub)
     | SIter (n,f,a) -> SIter((substitution n var tsub),(substitution f var tsub),(substitution a var tsub))
+    | SPair(x,y) -> SPair((substitution x var tsub),(substitution y var tsub))
+    | SP0(x) -> SP0(substitution x var tsub)
+    | SP1(x) -> SP1(substitution x var tsub)
 
 let rec relie_libre i bv t =
   match t with 
@@ -217,6 +288,9 @@ let rec relie_libre i bv t =
   | SZero -> SZero
   | SSucc x -> SSucc(relie_libre i bv x)
   | SIter (n,f,a) -> SIter((relie_libre i bv n),(relie_libre i bv f),(relie_libre i bv a))
+  | SPair (x,y) -> SPair((relie_libre i bv x),(relie_libre i bv y ))
+  | SP0(x) -> SP0(relie_libre i bv x)
+  | SP1(x) -> SP1(relie_libre i bv x)
 
 let rec relie_libre_inTm i bv t = 
   match t with 
@@ -226,6 +300,7 @@ let rec relie_libre_inTm i bv t =
   | False -> False 
   | Zero -> Zero 
   | Succ(x) -> Succ(relie_libre_inTm i bv x)
+  | Pair(x,y) -> Pair((relie_libre_inTm i bv x),(relie_libre_inTm i bv y))
 and relie_libre_exTm  i bv t = 
   match t with 
   | BVar v -> BVar v 
@@ -234,7 +309,9 @@ and relie_libre_exTm  i bv t =
   | Appl(x,y) -> Appl((relie_libre_exTm i bv x),(relie_libre_inTm i bv y))
   | Ifte(x,y,z) -> Ifte((relie_libre_inTm i bv x),(relie_libre_exTm i bv y),(relie_libre_exTm i bv z))
   | Ann(x,y) -> Ann((relie_libre_inTm i bv x),y)
-  | _ -> failwith "TBD"
+  | P0(x) -> P0(relie_libre_exTm i bv x)
+  | P1(x) -> P1(relie_libre_exTm i bv x)
+  | Iter(n,f,a) -> Iter((relie_libre_inTm i bv n),(relie_libre_inTm i bv f),(relie_libre_exTm i bv a))
 
 
 
@@ -272,9 +349,10 @@ let rec reduction_forte t i  =
 	 | SZero -> reduction_forte a i 
 	     (* ici je ne failwith pas parceque je pense que le terme est bien formé juste que on ne peut pas le réduire plus, vu que on est pas en typé *)
 	 | _ -> SIter(n,f,a) 
-(* romisfrag : faire des test pour Iter avec la reduction forte *)	
        end 
-
+    | SPair (x,y) -> SPair((reduction_forte x i),(reduction_forte y i))
+    | SP0(x) -> SP0(reduction_forte x i)
+    | SP1(x) -> SP1(reduction_forte x i)
 
 
 let rec big_step_eval_exTm t envi = 
@@ -287,23 +365,45 @@ let rec big_step_eval_exTm t envi =
     | Iter(n,f,a) -> viter(big_step_eval_inTm n envi, 
                            big_step_eval_inTm f envi,
                            big_step_eval_exTm a envi)
-    | _ -> failwith "On commence déja par ça et après on vera"
+    | Ifte(c,thens,elses) ->
+       let cond  = big_step_eval_inTm c envi in
+       begin 
+	 match cond with 
+	 | VTrue -> big_step_eval_exTm thens envi
+	 | VFalse -> big_step_eval_exTm elses envi 
+	 | _ -> failwith "Impossible" 
+       end 
+    | P0(x) ->
+       begin 
+       match big_step_eval_exTm x envi with  
+	       | VPair(a,b) -> a
+	       | _ -> failwith "Impossibl: P0 can't be applied to something else then a pair"
+       end 
+    | P1(x) ->
+       begin 
+       match big_step_eval_exTm x envi with  
+	       | VPair(a,b) -> a
+	       | _ -> failwith "Imposibl: P1 can't be applied to something else then a pair"
+       end 				      
 and viter (v, f,a) = 
   match v with
   | VZero ->  a
   | VSucc v -> vapp (f, (viter (v, f, a)))
-  | _ -> failwith "Impossible"
+  | _ -> failwith "Impossible (viter)"
 and vapp v = 
   match v with 
   | ((VLam f),v) -> f v
   | ((VNeutral n),v) -> VNeutral(NApp(n,v))
+  | _ -> failwith "Impossible (vapp)"
 and big_step_eval_inTm t envi = 
   match t with 
   | Inv(i) -> big_step_eval_exTm i envi
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | Zero -> VZero
   | Succ n -> VSucc (big_step_eval_inTm n envi)
-  | _ -> failwith "On commence déja par ça et après on vera"
+  | Pair(x,y) -> VPair((big_step_eval_inTm x envi),(big_step_eval_inTm y envi))
+  | True -> VTrue 
+  | False -> VFalse 
 		
 
 	       
@@ -315,6 +415,7 @@ let rec typed_to_simple_inTm t =
     | False -> SFalse
     | Zero -> SZero
     | Succ x -> SSucc (typed_to_simple_inTm x)
+    | Pair(x,y) -> SPair((typed_to_simple_inTm x),(typed_to_simple_inTm y))
 and typed_to_simple_exTm t = 
   match t with 
     | BVar x -> SBVar x 
@@ -323,6 +424,8 @@ and typed_to_simple_exTm t =
     | Ann(x,y) -> typed_to_simple_inTm x 
     | Ifte(x,y,z) -> SIfte((typed_to_simple_inTm x),(typed_to_simple_exTm y),(typed_to_simple_exTm z))
     | Iter(n,f,a) -> SIter((typed_to_simple_inTm n),(typed_to_simple_inTm f),(typed_to_simple_exTm a))
+    | P0(x) -> SP0(typed_to_simple_exTm x)
+    | P1(x) -> SP1(typed_to_simple_exTm x)
 
 
 let gensym =
@@ -349,6 +452,14 @@ let rec check contexte inT ty
     | False -> if ty = Bool then true else false
     | Zero -> if ty = Nat then true else false 
     | Succ x -> if ty = Nat then check contexte x Nat else false
+    | Pair(x,y) -> 
+       begin 
+	 match ty with 
+	 | Croix(a,b) -> if (check contexte x a) 
+			 then (check contexte y b) 
+			 else failwith "In Pair(x,y) x is not of type a"				  
+	 | _ -> failwith "Type of a pair must be a Croix"
+       end 
 and synth contexte exT 
     = match exT with
     | Ann(tm, ty) ->
@@ -385,6 +496,18 @@ and synth contexte exT
 			 else failwith "Iter 2nd arg must be of type_a -> type_a"
 		       end 
 		     else failwith "Iter first arg must be a Nat"
+    | P0(x) -> 
+       begin 
+	 match (synth contexte x) with 
+	 | Croix(a,b) -> a
+	 | _ -> failwith "Po must be applied to a pair" 	   
+       end 
+    | P1(x) -> 
+       begin 
+	 match (synth contexte x) with 
+	 | Croix(a,b) -> b
+	 | _ -> failwith "P1 must be applied to a pair" 	   
+       end 
 	
 (* romisfrag : checker la synthèse de Iter *)				 
 		     
