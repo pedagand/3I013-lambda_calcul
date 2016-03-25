@@ -38,16 +38,25 @@ let rec parse_term env t =
            (fun var b -> Abs(var,b))
            vars
            (parse_term (List.append (List.rev vars) env) body)      
-      | Sexp.List [Sexp.Atom "pi"; Sexp.Atom v ; s ; t] -> 
-	 Pi(v,(parse_term env s),(parse_term env t))        
-      | Sexp.Atom "*" -> Star      
+      | Sexp.List [Sexp.Atom "pi"; Sexp.Atom var ; s ; t] -> 
+	 Pi(var,(parse_term env s),(parse_term (var::env) t))        
+      | Sexp.List [Sexp.Atom "pi";Sexp.List vars; s; t] -> 
+	 let vars = List.map (function 
+			       | Sexp.Atom v -> v
+			       | _ -> failwith "Parser pi invalide variable") vars 
+	 in 
+	 List.fold_right
+	   (fun var b -> Pi(var,(parse_term (List.append (List.rev vars) env) s),b))
+	   vars 
+	   (parse_term (List.append (List.rev vars) env) t)
+      | Sexp.Atom "*!" -> Star      
       | _ -> Inv(parse_exTm env t)
 and parse_exTm env t = 
   let rec lookup_var env n v
     = match env with
     | [] -> FVar v
-        | w :: env when v = w -> BVar n
-        | _ :: env -> lookup_var env (n+1) v 
+    | w :: env when v = w -> BVar n
+    | _ :: env -> lookup_var env (n+1) v 
   in
   match t with 
   | Sexp.List [Sexp.Atom ":" ;x; t] -> 
@@ -60,6 +69,21 @@ and parse_exTm env t =
        (List.map (parse_term env) args)
   | _ -> failwith "erreur de parsing" 
 
+let rec pretty_print_inTm t l = 
+  match t with 
+  | Abs(str,x) -> "(lambda " ^ str ^ " " ^ pretty_print_inTm x (str :: l) ^ ")"
+  | Inv (x) ->  pretty_print_exTm x l
+  | Pi (str,s,t) -> "(pi " ^ str ^ " " ^ pretty_print_inTm s l ^ " " ^ pretty_print_inTm t (str :: l) ^ ")"
+  | Star -> "*!"
+and pretty_print_exTm t l =
+  match t with 
+  | Ann(x,y) ->  "(: " ^ pretty_print_inTm x l ^ " " ^ pretty_print_inTm y l ^ ")"
+  | BVar(x) -> List.nth l x 
+  | FVar (x) -> x
+  | Appl(x,y) -> "(" ^ pretty_print_exTm x l ^ " " ^ pretty_print_inTm y l ^ ")"
+
+    
+      
 
 
 
@@ -71,7 +95,7 @@ let rec substitution_inTm t tsub var =
   | Inv x -> Inv(substitution_exTm x tsub var)
   | Abs(x,y) -> Abs(x,(substitution_inTm y tsub (var+1)))
   | Star -> Star
-  | Pi(v,x,y) -> Pi (v,(substitution_inTm x tsub var),(substitution_inTm x tsub (var+1)))
+  | Pi(v,x,y) -> Pi(v,(substitution_inTm x tsub var),(substitution_inTm y tsub (var+1)))
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
@@ -127,48 +151,108 @@ and neutral_to_exTm i v =
   | NApp(n,x) -> Appl((neutral_to_exTm i n),(value_to_inTm i x))
 
 	
+(* fonctions pour le debug *)
+let rec contexte_to_string contexte l= 
+  match contexte with 
+  | [] -> "|" 	    
+  | (s,w) :: tail -> "(" ^ s ^ "," ^ pretty_print_inTm w l ^ ");" ^ contexte_to_string tail l  
 
-(* idée faire un moyen de backtraquer avec une liste en argument ou a chaque fois que on effectue une opération il faut la mettre dans cette liste *)
-let rec check contexte inT ty = 
+
+(* ^ idée faire un moyen de backtraquer avec une liste en argument ou a chaque fois que on effectue une opération il faut la mettre dans cette liste *) 
+(* let rec check contexte inT ty debug ldebug= 
   match inT with 
   | Abs(x,y) -> 
      begin 
      match ty with      
-       | Pi(v,s,t) -> let freshVar = gensym () in
-		    check ((freshVar,s)::contexte) (substitution_inTm y (FVar(freshVar)) 0) t
-       | _ -> failwith "Abs must be of type " 
+     | Pi(v,s,t) -> let freshVar = gensym () in
+		    check ((freshVar,s)::contexte) (substitution_inTm y (FVar(freshVar)) 0) t ((pretty_print_inTm (Abs(x,y)) (freshVar :: ldebug )) ^ ";" ^ debug)  (freshVar :: ldebug )
+     | _ -> failwith ("Abs must be of type " ^ debug  )
      end 
-  |  Inv(t) -> 
-      let tyT = synth contexte t in
-      begin 	
-	(big_step_eval_inTm tyT []) = (big_step_eval_inTm ty [])
-      end
-  | Pi(v,s,t) when check contexte s Star -> let freshVar = gensym () in 
-					  check ((freshVar,s)::contexte) (substitution_inTm t (FVar(freshVar)) 0) Star
+  | Inv(t) -> 
+     let tyT = synth contexte t ((pretty_print_inTm (Inv(t)) ldebug) ^ ";" ^ debug) ldebug in
+     begin 	
+       (big_step_eval_inTm tyT []) = (big_step_eval_inTm ty [])
+     end
+  | Pi(v,s,t) when (check contexte s Star ((pretty_print_inTm (Pi(v,s,t)) ldebug) ^ ";" ^ debug) ldebug) ->
+     let freshVar = gensym () in 
+     begin 
+     check ((freshVar,s)::contexte) (substitution_inTm t (FVar(freshVar)) 0) Star ((pretty_print_inTm (Pi(v,s,(substitution_inTm t (FVar(freshVar)) 0))) (freshVar :: ldebug)) ^ ";" ^ debug) (freshVar :: ldebug)
+     end
+  | Pi(v,s,t) -> failwith ("Pi s must be of type star !!" ^ pretty_print_inTm inT ldebug ^ "!! contexte: " ^ contexte_to_string contexte "" [])
   | Star -> 
      begin 
       match ty with 
 	| Star -> true 
-	| _ -> failwith "ty must be a Star"
+	| _ -> failwith ("ty must be a Star" ^ debug)
      end
-  | _ -> failwith "term not typable" 
-and synth contexte exT =
+ (*  | _ -> failwith ("term not typable !!" ^ pretty_print_inTm inT ldebug ^ "!!"  ^ debug ) *)
+and synth contexte exT debug ldebug =
   match exT with 
-  | BVar x -> failwith "Pas possible de trouver une boundVar a synthétiser"
+  | BVar x -> failwith ("Pas possible de trouver une boundVar a synthétiser " ^ debug) 
   | FVar x -> List.assoc x contexte
   | Ann(tm, ty) ->
-       if check contexte ty Star &&  check contexte tm ty then 
+       if check contexte ty Star ((pretty_print_exTm (Ann(tm,ty)) ldebug) ^ ";" ^ debug) ldebug 
+	  &&  check contexte tm ty ((pretty_print_exTm (Ann(tm,ty)) ldebug) ^ ";" ^ debug) ldebug then 
          ty 
        else
-         failwith "Wrong annotation"
+         failwith ("Wrong annotation" ^ debug)
   | Appl(x,y) -> 
-     let pTy = synth contexte x in 
+     let pTy = synth contexte x ((pretty_print_exTm (Appl(x,y)) ldebug) ^ ";" ^ debug) ldebug in 
      begin 
        match pTy with 
-       | Pi(v,s,t) -> if check contexte y s 
+       | Pi(v,s,t) -> if check contexte y s ((pretty_print_exTm (Appl(x,y)) ldebug) ^ ";" ^ debug) ldebug
 		    then (substitution_inTm t (Ann(y,s)) 0)
-		    else failwith "mauvais type d'argument pour l'application"
-       | _ -> failwith "Mauvais annotation" 				  
+		    else failwith ("mauvais type d'argument pour l'application" ^ debug)
+       | _ -> failwith ("Mauvais annotation" ^ debug)
+     end
+ *)
+										       
+let rec check contexte inT ty debug ldebug= 
+  match inT with 
+  | Abs(x,y) -> 
+     begin 
+     match ty with      
+     | Pi(v,s,t) -> let freshVar = gensym () in
+		    check ((freshVar,s)::contexte) (substitution_inTm y (FVar(freshVar)) 0) t ""  (freshVar :: ldebug)
+     | _ -> failwith ("Abs must be of type " ^ debug  )
+     end 
+  | Inv(t) -> 
+     let tyT = (synth contexte t "" ldebug) in
+     begin       
+     (big_step_eval_inTm tyT []) = (big_step_eval_inTm ty []) 
+     end
+  | Pi(v,s,t) ->
+     let freshVar = gensym () in 
+     begin 
+       if  (check contexte s Star "" ldebug) then 
+	 check ((freshVar,s)::contexte) (substitution_inTm t (FVar(freshVar)) 0) Star "" (freshVar :: ldebug)
+       else failwith ("Pi s must be of type star !!"^ pretty_print_inTm s [] ^ "!! contexte !!"  ^ contexte_to_string contexte  [])
+     end
+  | Star -> 
+     begin 
+      match ty with 
+	| Star -> true
+	| _ -> failwith ("ty must be a Star" ^ debug)
+     end
+ (*  | _ -> failwith ("term not typable !!" ^ pretty_print_inTm inT ldebug ^ "!!"  ^ debug ) *)
+and synth contexte exT debug ldebug =
+  match exT with 
+  | BVar x -> failwith ("Pas possible de trouver une boundVar a synthétiser " ^ "!! contexte: " ^ contexte_to_string contexte [])
+  | FVar x -> read(pretty_print_inTm(List.assoc x contexte) [] )
+  | Ann(tm, ty) ->
+       if check contexte ty Star "" ldebug 
+	  &&  check contexte tm ty "" ldebug then 
+         ty 
+       else
+         failwith ("Wrong annotation" ^ debug)
+  | Appl(x,y) -> 
+     let pTy = synth contexte x "" ldebug in 
+     begin 
+       match pTy with 
+       | Pi(v,s,t) -> if (check contexte y s "" ldebug)
+		    then (substitution_inTm t (Ann(y,s)) 0)
+		    else failwith ("mauvais type d'argument pour l'application" ^ "Appl(x,y) " ^ pretty_print_exTm (Appl(x,y)) [] ^ " pty :  " ^     pretty_print_inTm pTy [] ^ "contexte !!!" ^  contexte_to_string contexte [])
+       | _ -> failwith ("Mauvais annotation" ^ debug)
      end
 
 
