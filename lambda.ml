@@ -38,6 +38,8 @@ let rec parse_term env t =
            (fun var b -> Abs(var,b))
            vars
            (parse_term (List.append (List.rev vars) env) body)      
+      | Sexp.List [Sexp.Atom "->"; s ; t ] -> 
+	 Pi("NO",(parse_term env s),(parse_term env t))
       | Sexp.List [Sexp.Atom "pi"; Sexp.Atom var ; s ; t] -> 
 	 Pi(var,(parse_term env s),(parse_term (var::env) t))        
       | Sexp.List [Sexp.Atom "pi";Sexp.List vars; s; t] -> 
@@ -140,10 +142,6 @@ let rec relie_free_context_inTm  contexte t =
   | Inv(FVar (v)) -> List.assoc v contexte
   | Inv(Appl (x,y)) -> Inv(Appl(Ann((relie_free_context_inTm contexte (Inv(x))),Star),relie_free_context_inTm contexte y))
 
-let () = Printf.printf "relie_free %s" (pretty_print_inTm (relie_free_context_inTm ([("x1",Star)]) (Pi("x",Inv(FVar"x1"),Star))) [])
-
-
-
 
 
 let read t = parse_term [] (Sexp.of_string t)
@@ -240,9 +238,10 @@ let rec check contexte inT ty debug ldebug=
      (big_step_eval_inTm (relie_free_context_inTm contexte tyT) []) = (big_step_eval_inTm (relie_free_context_inTm contexte ty) [])
      end
   | Pi(v,s,t) ->
+     (* nouveau problème dans le type checker si s est une variable libre et que on veut tester si c'est une star ça ne vas pas marcher si c'est un pi *)
      let freshVar = gensym () in 
      begin 
-       if  (check contexte s Star "" ldebug) then 
+       if  (check contexte  s Star "" ldebug) then 
 	 check ((freshVar,s)::contexte) (substitution_inTm t (FVar(freshVar)) 0) Star "" (freshVar :: ldebug)
        else failwith ("Pi s must be of type star !!"^ pretty_print_inTm s [] ^ "!! contexte !!"  ^ contexte_to_string contexte  [])
      end
@@ -252,7 +251,6 @@ let rec check contexte inT ty debug ldebug=
 	| Star -> true
 	| _ -> failwith ("ty must be a Star" ^ debug)
      end
- (*  | _ -> failwith ("term not typable !!" ^ pretty_print_inTm inT ldebug ^ "!!"  ^ debug ) *)
 and synth contexte exT debug ldebug =
   match exT with 
   | BVar x -> failwith ("Pas possible de trouver une boundVar a synthétiser " ^ "!! contexte: " ^ contexte_to_string contexte [])
