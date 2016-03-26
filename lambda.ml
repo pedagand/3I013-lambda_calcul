@@ -128,6 +128,24 @@ and big_step_eval_inTm t envi =
   | Pi (v,x,y) -> VPi ((big_step_eval_inTm x envi),(function arg -> (big_step_eval_inTm y (arg :: envi))))
 
 
+(* il me semble qu'il me faut une fonction de relie libre avant de lancer big step eval dans le check pour que celui ci puisse faire le travail 
+le contexte que l'on va utiliser est de la forme ("nom var",inTm)*)
+let rec relie_free_context_inTm  contexte t = 
+  match t with 
+  | Abs(x,y) -> Abs(x,relie_free_context_inTm contexte y)
+  | Pi (v,s,z) -> Pi(v,relie_free_context_inTm contexte s,relie_free_context_inTm contexte z)
+  | Star -> Star 
+  | Inv(Ann(x,y)) -> Inv(Ann(relie_free_context_inTm contexte x,relie_free_context_inTm contexte y))
+  | Inv(BVar(v)) -> Inv(BVar(v))
+  | Inv(FVar (v)) -> List.assoc v contexte
+  | Inv(Appl (x,y)) -> Inv(Appl(Ann((relie_free_context_inTm contexte (Inv(x))),Star),relie_free_context_inTm contexte y))
+
+let () = Printf.printf "relie_free %s" (pretty_print_inTm (relie_free_context_inTm ([("x1",Star)]) (Pi("x",Inv(FVar"x1"),Star))) [])
+
+
+
+
+
 let read t = parse_term [] (Sexp.of_string t)
 
 let gensym =
@@ -219,7 +237,7 @@ let rec check contexte inT ty debug ldebug=
   | Inv(t) -> 
      let tyT = (synth contexte t "" ldebug) in
      begin       
-     (big_step_eval_inTm tyT []) = (big_step_eval_inTm ty []) 
+     (big_step_eval_inTm (relie_free_context_inTm contexte tyT) []) = (big_step_eval_inTm (relie_free_context_inTm contexte ty) [])
      end
   | Pi(v,s,t) ->
      let freshVar = gensym () in 
@@ -251,7 +269,7 @@ and synth contexte exT debug ldebug =
        match pTy with 
        | Pi(v,s,t) -> if (check contexte y s "" ldebug)
 		    then (substitution_inTm t (Ann(y,s)) 0)
-		    else failwith ("mauvais type d'argument pour l'application" ^ "Appl(x,y) " ^ pretty_print_exTm (Appl(x,y)) [] ^ " pty :  " ^     pretty_print_inTm pTy [] ^ "contexte !!!" ^  contexte_to_string contexte [])
+		    else failwith ("mauvais type d'argument pour l'application" ^ "Appl" ^ pretty_print_exTm (Appl(x,y)) [] ^ " pty :  " ^     pretty_print_inTm pTy [] ^ "contexte !!!" ^  contexte_to_string contexte [])
        | _ -> failwith ("Mauvais annotation" ^ debug)
      end
 

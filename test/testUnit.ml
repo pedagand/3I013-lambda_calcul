@@ -11,7 +11,7 @@ let test1y = "(pi A *! (pi B (pi x A *!) (pi C (pi x A *!) (pi 1 (pi 2 (pi a *! 
 let testcheck3x = "(pi A *! (pi B (pi x A *!) *!))"
 
 
-let () = Printf.printf "\n test %b \n" (check [] (read test1y) Star "" [])
+let () = Printf.printf "\n test final %b \n" (check [] (read test1y) Star "" [])
 
 
 
