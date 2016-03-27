@@ -7,6 +7,23 @@
 \usepackage[francais]{babel}
 \usepackage{amsthm, amssymb, amsmath}
 \usepackage{hyperref}
+\usepackage{noweb}
+
+%% ** Theorem styles 
+
+
+\newtheorem{theorem}{Théorème}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemme}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Définition}
+\newtheorem{example}{Exemple}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remarque}
+\newtheorem{para}{} 
+
 
 %% ** Title
 
@@ -22,7 +39,7 @@
 
 %% ** Abstract 
 \begin{abstract} 
-Ce document représente l'ensemble du travail effectué durant l'unité d'enseignement 3I013 de l'upmc
+  Ce document représente l'ensemble du travail effectué durant l'unité d'enseignement 3I013 de l'upmc,
 \end{abstract}
 
 \tableofcontents
@@ -33,11 +50,53 @@ Ce document représente l'ensemble du travail effectué durant l'unité d'enseig
 
 \section{Introduction}
 
+blabla
+
 \section{\lambda calcul non typé}
+
+En 1936 que Alonzo Church introduit le lambda calcul non typé(citation de church), c'est
+un modèle de calcul universel tout comme les machines de Turing. Celui ci repose
+sur une syntaxe minimaliste et permet de formaliser le concept d'application 
+de fonctions. Il est au coeur de nombreuses recherches dans le domaine de la programmation fonctionnelle. Le lambda calcul non typé a connu un formidable 
+succès, donnant lieu à de multiples variantes dont on trouvera une présentation
+ moderne et synthétique dans l'ouvrage de (citation pierce).
 
 \subsection{Présentation formelle}
 
-Le lambda calcul est ...
+\subsubsection{Syntaxe}
+Le lambda calcul est composé uniquement de \lambda$ termes dont voici la syntaxe
+
+\begin{align*}
+  t &::= & \mbox{(lambda terme)} \\
+  &|\quad x & \mbox{(variable)} \\
+  &|\quad \lambda x. t & \mbox{(abstraction)} \\
+  &|\quad t\: t          & \mbox{(application)}
+\end{align*}
+
+\begin{example}
+  L'abstraction nous permet de construire des fonctions anonymes, par exemple la
+  fonction identitée peut etre définie par le lambda terme suivant
+  %
+  \[ 
+  \lambda x. x
+  \]
+\end{example}
+
+\subsubsection{Variables libres et variables liées}
+
+Une variable est liée lorsque celle ci est déclarée dans un lambda, dans 
+l'exemple précédent x était une variable liée. 
+Si la variable n'a pas été déclarée elle sera dite libre. 
+
+\begin{example}
+  Dans le terme suivant \(\lambda x.\lambda y.x\:y\:z\)$ , les variables x et 
+  y sont liées tandis que la variable z est libre 
+\end{example}
+
+
+  
+
+
 
 
 
