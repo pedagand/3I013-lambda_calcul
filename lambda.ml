@@ -241,9 +241,9 @@ let rec check contexte inT ty debug ldebug=
      (* nouveau problème dans le type checker si s est une variable libre et que on veut tester si c'est une star ça ne vas pas marcher si c'est un pi *)
      let freshVar = gensym () in 
      begin 
-       if  (check contexte  s Star "" ldebug) then 
+       if  (check contexte s Star "" ldebug) then 
 	 check ((freshVar,s)::contexte) (substitution_inTm t (FVar(freshVar)) 0) Star "" (freshVar :: ldebug)
-       else failwith ("Pi s must be of type star !!"^ pretty_print_inTm s [] ^ "!! contexte !!"  ^ contexte_to_string contexte  [])
+       else failwith ("Pi S must be of type star !!"^ pretty_print_inTm s [] ^ "!! contexte !!"  ^ contexte_to_string contexte  [] )
      end
   | Star -> 
      begin 

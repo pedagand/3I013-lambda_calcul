@@ -10,7 +10,7 @@ let test1y = "(pi A *! (pi B (pi x A *!) (pi C (pi x A *!) (pi 1 (pi 2 (pi a A (
 
 let testcheck3x = "(pi A *! (pi B (pi x A *!) *!))"
 
-let testcheck4x = "(pi F (pi a *! *!) (pi X F *!))"
+let testcheck4x = "(pi F (pi a *! *!) (-> F *!))"
 (* let () = Printf.printf "\n svp: %b \n" (check [] (read testcheck4x) Star "" []) *)
 
 (* ------------------------- test check ----------------------------------*)
