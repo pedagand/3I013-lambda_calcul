@@ -10,8 +10,8 @@ let test1y = "(pi A *! (pi B (pi x A *!) (pi C (pi x A *!) (pi 1 (pi 2 (pi a A (
 
 let testcheck3x = "(pi A *! (pi B (pi x A *!) *!))"
 
-let testcheck4x = "(pi F (pi a *! *!) (-> F *!))"
-(* let () = Printf.printf "\n svp: %b \n" (check [] (read testcheck4x) Star "" []) *)
+let testcheck4x = "(pi F (-> *! *!) (pi X *! (-> (F X) *!)))"
+
 
 (* ------------------------- test check ----------------------------------*)
 
@@ -27,9 +27,9 @@ let testcheck3 test_ctxt = assert_equal
 			     (check [] (read test1y) Star "" []) 
 			     (true)
 let testcheck4 test_ctxt = assert_equal 
-			     (* (check [] (read testcheck4x) Star "" []) *)
+			     (check [] (read testcheck4x) Star "" [])
 			     (true)
-			     (true)
+			     
 
 
 
