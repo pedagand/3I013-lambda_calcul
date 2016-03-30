@@ -8,17 +8,24 @@ type inTm =
   | Inv of exTm
   | Pi of string * inTm * inTm 
   | Star
+  | Zero
+  | Succ of inTm
+  | Nat
 and exTm = 
   | Ann of inTm * inTm 
   | BVar of int 
   | FVar of string 
   | Appl of exTm * inTm
-
+  | Iter of inTm * inTm * inTm * inTm  
+(* d'apres les regles c'est bien tout du inTm *)
 type value = 
   | VLam of (value -> value)
   | VNeutral of neutral 
   | VStar 
   | VPi of value * (value -> value)
+  | VSucc of value
+  | VZero 
+  | VNat
 and neutral = 
   | NFree of string 
   | NApp of neutral * value 
@@ -27,6 +34,10 @@ and neutral =
 (* ici on va crée le parseur lisp avec le pretty printing *)
 let rec parse_term env t = 
       match t with   
+      | Sexp.Atom "zero" -> Zero
+      | Sexp.Atom "N" -> Nat 
+      | Sexp.List [Sexp.Atom "succ"; n] -> 
+	 Succ(parse_term env n)
       | Sexp.List [Sexp.Atom "lambda"; Sexp.Atom var; body] -> 
 	 Abs(var,(parse_term (var::env) body)) 
       | Sexp.List [Sexp.Atom "lambda"; Sexp.List vars ; body] -> 
@@ -61,6 +72,8 @@ and parse_exTm env t =
     | _ :: env -> lookup_var env (n+1) v 
   in
   match t with 
+  | Sexp.List [Sexp.Atom "iter"; p ; n ; f ; z] ->
+     Iter((parse_term env p),(parse_term env n),(parse_term env f),(parse_term env z))
   | Sexp.List [Sexp.Atom ":" ;x; t] -> 
      Ann((parse_term env x),(parse_term env t))
   | Sexp.Atom v -> lookup_var env 0 v 
@@ -77,13 +90,16 @@ let rec pretty_print_inTm t l =
   | Inv (x) ->  pretty_print_exTm x l
   | Pi (str,s,t) -> "(pi " ^ str ^ " " ^ pretty_print_inTm s l ^ " " ^ pretty_print_inTm t (str :: l) ^ ")"
   | Star -> "*!"
+  | Succ n -> "(succ " ^ pretty_print_inTm n l ^ ")"
+  | Zero -> "zero"
+  | Nat -> "N" 
 and pretty_print_exTm t l =
   match t with 
   | Ann(x,y) ->  "(: " ^ pretty_print_inTm x l ^ " " ^ pretty_print_inTm y l ^ ")"
   | BVar(x) -> List.nth l x 
   | FVar (x) -> x
   | Appl(x,y) -> "(" ^ pretty_print_exTm x l ^ " " ^ pretty_print_inTm y l ^ ")"
-
+  | Iter(p,n,f,z) -> "(iter " ^ pretty_print_inTm p l ^ " " ^ pretty_print_inTm n l ^ " " ^ pretty_print_inTm f l ^ " " ^ pretty_print_inTm z l ^ ")"
     
       
 
@@ -98,6 +114,9 @@ let rec substitution_inTm t tsub var =
   | Abs(x,y) -> Abs(x,(substitution_inTm y tsub (var+1)))
   | Star -> Star
   | Pi(v,x,y) -> Pi(v,(substitution_inTm x tsub var),(substitution_inTm y tsub (var+1)))
+  | Zero -> Zero 
+  | Succ n -> Succ(substitution_inTm n tsub var)
+  | Nat -> Nat
 and substitution_exTm  t tsub var = 
   match t with 
   | FVar x -> FVar x
@@ -128,6 +147,10 @@ and big_step_eval_inTm t envi =
   | Abs(x,y) -> VLam(function arg -> (big_step_eval_inTm y (arg :: envi)))
   | Star -> VStar
   | Pi (v,x,y) -> VPi ((big_step_eval_inTm x envi),(function arg -> (big_step_eval_inTm y (arg :: envi))))
+  | Succ (n) -> VSucc(big_step_eval_inTm n envi)
+  | Zero -> VZero
+  | Nat -> VNat
+
 
 
 (* il me semble qu'il me faut une fonction de relie libre avant de lancer big step eval dans le check pour que celui ci puisse faire le travail 
@@ -141,7 +164,9 @@ let rec relie_free_context_inTm  contexte t =
   | Inv(BVar(v)) -> Inv(BVar(v))
   | Inv(FVar (v)) -> List.assoc v contexte
   | Inv(Appl (x,y)) -> Inv(Appl(Ann((relie_free_context_inTm contexte (Inv(x))),Star),relie_free_context_inTm contexte y))
-
+  | Zero -> Zero
+  | Succ(n) -> Succ(relie_free_context_inTm contexte n)
+  | Nat -> Nat 
 
 
 let read t = parse_term [] (Sexp.of_string t)
@@ -159,6 +184,9 @@ let rec value_to_inTm i v =
 		begin
 		Pi(var,(value_to_inTm i x),(value_to_inTm (i+1) (f(vfree(string_of_int (-i))))))
 		end
+  | VZero -> Zero
+  | VSucc(n) -> Succ(value_to_inTm i v)
+  | VNat -> Nat 
 and neutral_to_exTm i v = 
   match v with 
   | NFree x -> let k = int_of_string x in
@@ -222,7 +250,7 @@ and synth contexte exT debug ldebug =
        | _ -> failwith ("Mauvais annotation" ^ debug)
      end
  *)
-										       
+										(* alors soit je remplace les FVar des le debut lorsque je les mets dans le contexte ou alor a la sortie *)
 let rec check contexte inT ty debug ldebug= 
   match inT with 
   | Abs(x,y) -> 
@@ -235,7 +263,7 @@ let rec check contexte inT ty debug ldebug=
   | Inv(t) -> 
      let tyT = (synth contexte t "" ldebug) in
      begin       
-     (big_step_eval_inTm (relie_free_context_inTm contexte tyT) []) = (big_step_eval_inTm (relie_free_context_inTm contexte ty) [])
+       (big_step_eval_inTm (relie_free_context_inTm contexte tyT) []) = (big_step_eval_inTm (relie_free_context_inTm contexte ty) []) 
      end
   | Pi(v,s,t) ->
      (* nouveau problème dans le type checker si s est une variable libre et que on veut tester si c'est une star ça ne vas pas marcher si c'est un pi *)
@@ -251,6 +279,11 @@ let rec check contexte inT ty debug ldebug=
 	| Star -> true
 	| _ -> failwith ("ty must be a Star" ^ debug)
      end
+  | Zero -> if ty = Nat then true else failwith "Zero is a Nat" 
+  | Succ(n) -> if ty = Nat 
+	       then check contexte n Nat "" ldebug 
+	       else failwith "Succ is a Nat" 
+  | Nat -> if ty = Nat then true else failwith "Nat is a Nat :)" 
 and synth contexte exT debug ldebug =
   match exT with 
   | BVar x -> failwith ("Pas possible de trouver une boundVar a synthétiser " ^ "!! contexte: " ^ contexte_to_string contexte [])

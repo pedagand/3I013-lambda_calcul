@@ -18,6 +18,9 @@ let inputs
       ("(pi (x y z) *! (lambda w w))",Pi("x",Star,Pi("y",Star,Pi("z",Star,Abs("w",Inv(BVar 0))))));
       ("(pi A *! (pi B (pi x A *!) *!))",Pi("A",Star,Pi("B",(Pi ("x" ,Inv(BVar 0), Star)),Star)));
       ("(-> *! *!)",Pi("NO",Star,Star));
+      ("(succ (succ zero))",Succ(Succ(Zero)));
+      ("(: (succ zero) N)",Inv(Ann(Succ(Zero),Nat)));
+      ("(iter N N N N)",Inv(Iter(Nat,Nat,Nat,Nat)));
       (* ( (pretty_print_inTm test1x []),(test1x)); *)
       (* (test1y),(test1x) ;*)]
 
