@@ -34,6 +34,7 @@ and neutral =
 (* ici on va crée le parseur lisp avec le pretty printing *)
 let rec parse_term env t = 
       match t with   
+      | Sexp.Atom "*" -> Star
       | Sexp.Atom "zero" -> Zero
       | Sexp.Atom "N" -> Nat 
       | Sexp.List [Sexp.Atom "succ"; n] -> 
@@ -62,7 +63,6 @@ let rec parse_term env t =
 	   (fun var b -> Pi(var,(parse_term (List.append (List.rev vars) env) s),b))
 	   vars 
 	   (parse_term (List.append (List.rev vars) env) t)
-      | Sexp.Atom "*!" -> Star      
       | _ -> Inv(parse_exTm env t)
 and parse_exTm env t = 
   let rec lookup_var env n v
@@ -89,7 +89,7 @@ let rec pretty_print_inTm t l =
   | Abs(str,x) -> "(lambda " ^ str ^ " " ^ pretty_print_inTm x (str :: l) ^ ")"
   | Inv (x) ->  pretty_print_exTm x l
   | Pi (str,s,t) -> "(pi " ^ str ^ " " ^ pretty_print_inTm s l ^ " " ^ pretty_print_inTm t (str :: l) ^ ")"
-  | Star -> "*!"
+  | Star -> "*"
   | Succ n -> "(succ " ^ pretty_print_inTm n l ^ ")"
   | Zero -> "zero"
   | Nat -> "N" 

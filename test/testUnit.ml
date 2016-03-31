@@ -6,11 +6,11 @@ open Lambda
 
 let test1x = (Pi("A",Star,Pi("B",(Pi ("x", Inv(BVar 2),Star)),Pi("C",(Pi ("x", Inv(BVar 3),Star)), (Pi ("1",(Pi ("2", (Pi("a",Star,Pi("b",(Inv(Appl(BVar 5 ,Inv(BVar 1)))),Inv(Appl(BVar 4, Inv(BVar 1)))))),(Pi ("a",Inv(BVar 5),Inv(Appl(BVar 4,Inv(BVar 0))))))),(Pi ("a",Inv(BVar 4),Inv(Appl(BVar 2,Inv(BVar 0)))))))))))
 
-let test1y = "(pi A *! (pi B (pi x A *!) (pi C (pi x A *!) (pi 1 (pi 2 (pi a A (pi b (B a) (C a))) (pi a A (B a))) (pi a A (C a))))))"
+let test1y = "(pi A * (pi B (pi x A *) (pi C (pi x A *) (pi 1 (pi 2 (pi a A (pi b (B a) (C a))) (pi a A (B a))) (pi a A (C a))))))"
 
-let testcheck3x = "(pi A *! (pi B (pi x A *!) *!))"
+let testcheck3x = "(pi A * (pi B (pi x A *) *))"
 
-let testcheck4x = "(pi F (-> *! *!) (pi X *! (-> (F X) *!)))"
+let testcheck4x = "(pi F (-> * *) (pi X * (-> (F X) *)))"
 
 
 (* ------------------------- test check ----------------------------------*)
@@ -40,19 +40,19 @@ let testcheck5 test_ctxt = assert_equal
 (* ------------------------- test pretty_print_inTm ----------------------- *)
 let test_pretty1 test_ctxt = assert_equal 
 			(read(pretty_print_inTm (Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Star),Inv(FVar "y")))) []))
-			(read "((: (lambda x x) *!) y)")
+			(read "((: (lambda x x) *) y)")
 let test_pretty2 test_ctxt = assert_equal
 			 (read(pretty_print_inTm (Abs("x",Abs("y",Abs("z",Inv(Appl(BVar 2, Inv(Appl(BVar 1, Inv(BVar 0))))))))) [] ))
 			 (read "(lambda (x y z) (x (y z)))")
 let test_pretty3 test_ctxt = assert_equal 
 			 (read(pretty_print_inTm (Inv(Ann(Abs("x",Inv(BVar 0)),Pi("x",Star,Star)))) []))
-			 (read "(: (lambda x x) (pi x *! *!))")
+			 (read "(: (lambda x x) (pi x * *))")
 let test_pretty4 test_ctxt = assert_equal 
 			       (*(read (pretty_print_inTm (test1x) [])) 
 			       (read (test1y)) *) () () 
 let test_pretty5 test_ctxt = assert_equal 
 			       (read (pretty_print_inTm ((Pi("x",Star,Pi("y",Star,Pi("z",Star,Star))))) [])) 
-			       (read "(pi (x y z ) *! *!)") 
+			       (read "(pi (x y z ) * *)") 
 let test_pretty6 test_ctxt = assert_equal 
 			       (read (pretty_print_inTm (Succ(Succ(Zero))) [])) 
 			       (read "(succ (succ zero))") 
@@ -69,8 +69,8 @@ let test_sub_inTm1 text_ctxt = assert_equal
 				 (substitution_inTm (read "(lambda x (x 0))") (FVar "y") (-1))
 				 (read "(lambda x (y 0))")
 let test_sub_inTm2 test_ctxt = assert_equal
-				 (substitution_inTm (read "(pi x *! (pi y x *!))") (FVar "lol") (-1))
-				 (read "(pi x *! (pi y lol *!))") 
+				 (substitution_inTm (read "(pi x * (pi y x *))") (FVar "lol") (-1))
+				 (read "(pi x * (pi y lol *))") 
 
 let test_sub_inTm3 test_ctxt = assert_equal
 				 (substitution_inTm (read "(lambda x (succ x))") (FVar "lol") (-1)) 
