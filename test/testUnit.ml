@@ -1,5 +1,20 @@
 open OUnit2
+open Sexplib
 open Lambda
+
+
+(* ------------------------- test check ----------------------------------*)
+
+(* TODO: put this in a separate file 'typecheckT.ml' *)
+(* TODO: Write counter-examples, ie. terms that should not type check *)
+
+(* TODO: use the following generic test handler: *)
+
+let testcheckPositive inputTerm inputType =
+  assert_bool "Not type correct" (check [] (read inputTerm) inputType "" [])
+
+let testcheckNegative inputTerm inputType =
+  assert_bool "Unexpectedly type correct" (not (check [] (read inputTerm) inputType "" []))
 
 
 (*test de check terme *)
@@ -11,9 +26,6 @@ let test1y = "(pi A * (pi B (pi x A *) (pi C (pi x A *) (pi 1 (pi 2 (pi a A (pi 
 let testcheck3x = "(pi A * (pi B (pi x A *) *))"
 
 let testcheck4x = "(pi F (-> * *) (pi X * (-> (F X) *)))"
-
-
-(* ------------------------- test check ----------------------------------*)
 
 
 (* let testcheck1 text_ctxt = assert_equal (check [] (test1x) Star "" []) (true) *)
@@ -38,9 +50,23 @@ let testcheck5 test_ctxt = assert_equal
 
 
 (* ------------------------- test pretty_print_inTm ----------------------- *)
-let test_pretty1 test_ctxt = assert_equal 
-			(read(pretty_print_inTm (Inv(Appl(Ann(Abs("x",Inv(BVar 0)),Star),Inv(FVar "y")))) []))
-			(read "((: (lambda x x) *) y)")
+
+(* TODO: put this in a separate file 'prettyPrintT.ml' *)
+
+(* TODO: use the following generic test handler *)
+
+(* We compare pretty-printed strings based on the tokens (ignoring spacing) *)
+let compare_term a b = 
+  Sexp.of_string a = Sexp.of_string b
+
+let testpretty input = 
+  assert_equal ~cmp:compare_term 
+    (pretty_print_inTm (read input) [])
+    input
+
+let test_pretty1 test_ctxt = 
+  testpretty "((: (lambda x x) *) y)"
+
 let test_pretty2 test_ctxt = assert_equal
 			 (read(pretty_print_inTm (Abs("x",Abs("y",Abs("z",Inv(Appl(BVar 2, Inv(Appl(BVar 1, Inv(BVar 0))))))))) [] ))
 			 (read "(lambda (x y z) (x (y z)))")
@@ -64,7 +90,7 @@ let test_pretty7 test_ctxt = assert_equal
 
 (* ------------------------- test substitution  --------------------------- *)
 
-
+(* TODO: put this in a separate file 'substT.ml' *)
 let test_sub_inTm1 text_ctxt = assert_equal 
 				 (substitution_inTm (read "(lambda x (x 0))") (FVar "y") (-1))
 				 (read "(lambda x (y 0))")
